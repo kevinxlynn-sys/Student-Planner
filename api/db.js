@@ -12,19 +12,4 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(url, {
-      method: method || 'GET',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : [];
-    res.status(response.ok ? 200 : 400).json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-}
+      method: method
