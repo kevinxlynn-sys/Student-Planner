@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="application-name" content="Student Planner"/>
+<meta name="apple-mobile-web-app-title" content="Student Planner"/>
+<title>Student Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f1a;--surface:#161929;--surface2:#1e2338;--surface3:#252b42;
+  --accent:#00e5ff;--accent2:#7c3aed;--accent3:#f59e0b;
+  --text:#e2e8ff;--text2:#8b96c8;--border:#2a3158;
+  --green:#10b981;--red:#ef4444;--orange:#f97316;
+}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;padding:0}
+
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:44px 36px;max-width:380px;width:100%;text-align:center}
+.login-logo{width:72px;height:72px;background:linear-gradient(135deg,#7c3aed,#00e5ff);border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;margin:0 auto 20px;letter-spacing:1px;line-height:1.2}
+.login-title{font-family:'Orbitron',monospace;font-size:20px;color:var(--accent);letter-spacing:2px;margin-bottom:6px}
+.login-sub{font-size:11px;color:var(--text2);margin-bottom:32px;line-height:1.7}
+.pin-display{display:flex;justify-content:center;gap:12px;margin-bottom:28px}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:none;transition:.2s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(0,229,255,.4)}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.num-btn{padding:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Orbitron',monospace;font-size:18px;font-weight:500;border-radius:12px;cursor:pointer;transition:.15s}
+.num-btn:hover{background:var(--surface3);border-color:var(--accent2);color:var(--accent)}
+.num-btn:active{transform:scale(.95)}
+.num-btn.clear{font-size:13px;color:var(--text2)}
+.num-btn.clear:hover{border-color:var(--red);color:var(--red)}
+.num-btn.zero{grid-column:2}
+.start-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;color:#fff;font-family:'Orbitron',monospace;font-size:13px;letter-spacing:2px;border-radius:12px;cursor:pointer;transition:.2s;margin-top:4px}
+.start-btn:hover{opacity:.88}
+.start-btn:disabled{opacity:.3;cursor:not-allowed}
+.error-msg{font-size:11px;color:var(--red);margin-top:12px;min-height:18px;font-family:'Orbitron',monospace;letter-spacing:1px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.shake{animation:shake .3s ease}
+
+/* NOTIFICATION OVERLAY */
+#notifOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:20px}
+#notifOverlay.show{display:flex}
+.notif-panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto}
+.notif-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.notif-icon{font-size:24px}
+.notif-title{font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:1px;flex:1}
+.notif-close{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer}
+.notif-close:hover{border-color:var(--accent);color:var(--accent)}
+.notif-item{background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:8px;border-left:3px solid transparent}
+.notif-item.overdue{border-left-color:var(--red)}
+.notif-item.today{border-left-color:var(--orange)}
+.notif-item.tomorrow{border-left-color:var(--accent3)}
+.notif-item.read{border-left-color:var(--accent)}
+.notif-item-title{font-size:13px;color:var(--text);margin-bottom:4px}
+.notif-item-sub{font-size:10px;color:var(--text2)}
+.notif-badge{display:inline-block;font-size:9px;padding:2px 8px;border-radius:4px;font-family:'Orbitron',monospace;letter-spacing:.5px;margin-bottom:6px}
+.badge-red{background:rgba(239,68,68,.2);color:#f87171}
+.badge-orange{background:rgba(249,115,22,.2);color:#fb923c}
+.badge-yellow{background:rgba(245,158,11,.2);color:#fcd34d}
+.badge-blue{background:rgba(0,229,255,.15);color:var(--accent)}
+.notif-empty{text-align:center;padding:20px;color:var(--text2);font-size:13px}
+.dismiss-all-btn{width:100%;margin-top:12px;padding:12px;background:var(--accent2);border:none;color:#fff;border-radius:10px;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:1px;cursor:pointer}
+
+/* ADMIN OVERLAY */
+#adminOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;padding:20px}
+#adminOverlay.show{display:flex}
+.admin-panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:500px;width:100%;max-height:85vh;overflow-y:auto}
+.admin-title{font-family:'Orbitron',monospace;font-size:14px;color:var(--accent3);letter-spacing:1px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.admin-close{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer}
+.admin-section{margin-bottom:20px}
+.admin-section-title{font-family:'Orbitron',monospace;font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+.student-row{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.student-row-name{flex:1;font-size:13px}
+.student-row-pin{font-size:11px;color:var(--accent3);font-family:'Orbitron',monospace}
+.student-row-xp{font-size:11px;color:var(--green);margin-left:8px}
+.student-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;transition:.2s}
+.student-del:hover{color:var(--red)}
+.add-student-row{display:flex;gap:8px;flex-wrap:wrap}
+.admin-input{flex:1;min-width:100px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+.admin-input:focus{border-color:var(--accent)}
+.admin-add-btn{padding:8px 14px;background:var(--accent2);border:none;color:#fff;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;white-space:nowrap}
+.success-msg{font-size:11px;color:var(--green);margin-top:8px;min-height:18px;font-family:'Orbitron',monospace;letter-spacing:1px}
+
+/* APP */
+#appScreen{display:none;max-width:700px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.logo{width:40px;height:40px;background:linear-gradient(135deg,#7c3aed,#00e5ff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:1px;line-height:1.2;text-align:center}
+.title-block h1{font-family:'Orbitron',monospace;font-size:15px;color:var(--accent);letter-spacing:2px}
+.title-block p{font-size:10px;color:var(--text2);margin-top:2px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.notif-bell{position:relative;cursor:pointer}
+.bell-icon{font-size:20px}
+.bell-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:9px;font-family:'Orbitron',monospace;color:#fff}
+.bell-badge.show{display:flex}
+.admin-btn-small{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;cursor:pointer;transition:.2s}
+.admin-btn-small:hover{border-color:var(--accent3);color:var(--accent3)}
+.signout-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;cursor:pointer;transition:.2s}
+.signout-btn:hover{border-color:var(--red);color:var(--red)}
+.xp-wrap{text-align:right}
+.xp-lbl{font-size:10px;color:var(--accent3);font-family:'Orbitron',monospace}
+.xp-bar{width:80px;height:5px;background:var(--surface3);border-radius:3px;margin-top:4px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--orange));border-radius:3px;transition:.4s}
+
+.main-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border-radius:10px;padding:4px}
+.main-tab{flex:1;padding:10px 4px;border:none;background:none;color:var(--text2);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;border-radius:7px;transition:.2s;text-transform:uppercase}
+.main-tab.active{background:var(--accent2);color:#fff}
+.main-tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+.panel{display:none}
+.panel.active{display:block}
+
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.sum-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.sum-num{font-family:'Orbitron',monospace;font-size:20px;font-weight:700}
+.sum-lbl{font-size:9px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.filter-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Orbitron',monospace;font-size:9px;border-radius:6px;cursor:pointer;letter-spacing:.5px;transition:.2s}
+.filter-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.filter-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.add-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.add-input{flex:1;min-width:150px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+.add-input:focus{border-color:var(--accent)}
+.add-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;cursor:pointer}
+.add-btn{padding:8px 16px;background:var(--accent2);border:none;color:#fff;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:.5px;white-space:nowrap}
+.add-btn:hover{opacity:.85}
+.day-section{margin-bottom:16px}
+.day-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.day-name{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--text2)}
+.day-date{font-size:10px;color:var(--text2);opacity:.5}
+.today-badge{font-size:9px;padding:2px 7px;background:rgba(0,229,255,.15);color:var(--accent);border-radius:4px;font-family:'Orbitron',monospace}
+.daily-badge{font-size:9px;padding:2px 7px;background:rgba(245,158,11,.15);color:var(--accent3);border-radius:4px;font-family:'Orbitron',monospace}
+.overdue-badge{font-size:9px;padding:2px 7px;background:rgba(239,68,68,.15);color:#f87171;border-radius:4px;font-family:'Orbitron',monospace}
+.day-line{flex:1;height:1px;background:var(--border)}
+.hw-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;transition:.2s}
+.hw-card.done{opacity:.4}
+.hw-card.done .hw-title{text-decoration:line-through}
+.check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:.2s;margin-top:1px;user-select:none}
+.check.on{background:var(--green);border-color:var(--green)}
+.hw-body{flex:1}
+.hw-title{font-size:13px;color:var(--text);line-height:1.4}
+.hw-cat{font-size:10px;margin-top:3px}
+.hw-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.due-chip{font-size:9px;padding:2px 8px;border-radius:4px;font-family:'Orbitron',monospace;white-space:nowrap;letter-spacing:.5px}
+.chip-red{background:rgba(239,68,68,.15);color:#f87171}
+.chip-orange{background:rgba(249,115,22,.15);color:#fb923c}
+.chip-green{background:rgba(16,185,129,.15);color:#34d399}
+.chip-blue{background:rgba(0,229,255,.1);color:var(--accent)}
+.priority-dot{font-size:15px;line-height:1}
+@keyframes siren{0%,100%{opacity:1}50%{opacity:0.3}}
+.siren-urgent{animation:siren .6s infinite;filter:drop-shadow(0 0 4px #ef4444)}
+.del-btn{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;padding:0;line-height:1;transition:.2s}
+.del-btn:hover{color:var(--red)}
+.empty-state{text-align:center;padding:30px;color:var(--text2);font-size:13px}
+
+.workshop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.workshop-title{font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+.week-label-badge{font-size:10px;color:var(--accent3);font-family:'Orbitron',monospace;padding:4px 10px;border:1px solid var(--accent3);border-radius:6px}
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:20px}
+.upload-zone:hover{border-color:var(--accent2);background:rgba(124,58,237,.05)}
+.upload-zone.dragover{border-color:var(--accent);background:rgba(0,229,255,.05)}
+.upload-icon{font-size:36px;margin-bottom:12px}
+.upload-text{font-family:'Orbitron',monospace;font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:6px}
+.upload-sub{font-size:10px;color:var(--text2);opacity:.6}
+.workshop-week-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.wk-tab{padding:6px 14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Orbitron',monospace;font-size:9px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:.2s;flex-shrink:0}
+.wk-tab.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.workshop-list{display:flex;flex-direction:column;gap:6px}
+.workshop-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.workshop-item.done{opacity:.4}
+.workshop-item.done .w-title{text-decoration:line-through}
+.w-num{width:26px;height:26px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:10px;color:var(--text2);flex-shrink:0}
+.w-title{flex:1;font-size:13px;color:var(--text)}
+.w-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;padding:0;transition:.2s}
+.w-del:hover{color:var(--red)}
+.manual-add-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.manual-input{flex:1;min-width:150px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+.manual-input:focus{border-color:var(--accent)}
+.clear-week-btn{padding:8px 14px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;transition:.2s}
+.clear-week-btn:hover{border-color:var(--red);color:var(--red)}
+
+.xp-toast{position:fixed;top:20px;right:20px;background:var(--green);color:#fff;font-family:'Orbitron',monospace;font-size:12px;padding:8px 16px;border-radius:8px;opacity:0;transition:.3s;pointer-events:none;z-index:3000}
+.xp-toast.show{opacity:1}
+.goals-header{font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:1px;margin-bottom:16px}
+.goals-progress{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.goal-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.goal-icon{font-size:20px;flex-shrink:0}
+.goal-info{flex:1}
+.goal-title{font-size:13px;color:var(--text);margin-bottom:4px}
+.goal-sub{font-size:10px;color:var(--text2)}
+.goal-pct{font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);margin-left:auto;flex-shrink:0}
+.goal-bar-wrap{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:6px}
+.goal-bar-fill{height:100%;border-radius:3px;transition:.4s}
+.goal-complete{border-color:var(--green)!important}
+.goal-complete .goal-title{color:var(--green)}
+.preset-goals{margin-bottom:20px}
+.preset-title{font-family:'Orbitron',monospace;font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preset-btn{padding:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;text-align:left;transition:.2s;line-height:1.4}
+.preset-btn:hover{border-color:var(--accent2);color:var(--text)}
+.preset-btn.selected{border-color:var(--accent2);background:rgba(124,58,237,.15);color:var(--accent)}
+.preset-btn-icon{font-size:18px;display:block;margin-bottom:6px}
+.custom-goal-row{display:flex;gap:8px;margin-bottom:20px}
+.active-goals{margin-bottom:20px}
+.active-goal-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.active-goal-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.active-goal-icon{font-size:18px}
+.active-goal-name{flex:1;font-size:13px;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;letter-spacing:.5px}
+.active-goal-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;transition:.2s}
+.active-goal-del:hover{color:var(--red)}
+.notif-smart{background:rgba(0,229,255,.08);border-left:3px solid var(--accent)}
+.notif-smart .notif-item-title{color:var(--accent)}
+.badge-cyan{background:rgba(0,229,255,.15);color:var(--accent)}
+
+.wizard-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;align-items:center;justify-content:center;padding:20px}
+.wizard-overlay.show{display:flex}
+.wizard-panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:440px;width:100%;max-height:85vh;overflow-y:auto}
+.wizard-step{display:none}
+.wizard-step.active{display:block}
+.wizard-title{font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:1px;margin-bottom:6px}
+.wizard-sub{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.wizard-label{font-size:11px;color:var(--text2);font-family:'Orbitron',monospace;letter-spacing:.5px;margin-bottom:8px;display:block;text-transform:uppercase}
+.wizard-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;margin-bottom:14px}
+.wizard-input:focus{border-color:var(--accent)}
+.wizard-select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;margin-bottom:14px;cursor:pointer}
+.wizard-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.wizard-chip{padding:7px 14px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;transition:.2s}
+.wizard-chip.on{border-color:var(--accent2);background:rgba(124,58,237,.2);color:var(--accent)}
+.wizard-btn-row{display:flex;gap:8px;margin-top:8px}
+.wizard-btn{flex:1;padding:12px;border:none;border-radius:10px;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:.5px;cursor:pointer;transition:.2s}
+.wizard-btn.primary{background:var(--accent2);color:#fff}
+.wizard-btn.primary:hover{opacity:.85}
+.wizard-btn.secondary{background:none;border:1px solid var(--border);color:var(--text2)}
+.wizard-btn.secondary:hover{border-color:var(--red);color:var(--red)}
+.wizard-progress{display:flex;gap:6px;margin-bottom:20px}
+.wizard-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:.3s}
+.wizard-dot.active{background:var(--accent)}
+.wizard-dot.done{background:var(--accent2)}
+.goal-profile-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.goal-profile-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.goal-profile-row:last-child{border-bottom:none}
+.goal-profile-label{color:var(--text2)}
+.goal-profile-val{color:var(--accent3);font-family:'Orbitron',monospace;font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="xp-toast" id="xpToast">+25 XP!</div>
+
+<div id="notifOverlay">
+  <div class="notif-panel">
+    <div class="notif-header">
+      <span class="notif-icon">🔔</span>
+      <span class="notif-title" id="notifName">Hey!</span>
+      <button class="notif-close" onclick="closeNotif()">CLOSE</button>
+    </div>
+    <div id="notifList"></div>
+    <button class="dismiss-all-btn" onclick="closeNotif()">GOT IT! LET'S GET TO WORK 🎮</button>
+  </div>
+</div>
+
+<div id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-title">
+      ADMIN — Manage Students
+      <button class="admin-close" onclick="closeAdmin()">CLOSE</button>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">Add New Student</div>
+      <div class="add-student-row">
+        <input class="admin-input" id="newStudentName" placeholder="Student name..."/>
+        <input class="admin-input" id="newStudentPin" placeholder="4-digit PIN..." maxlength="4" style="width:120px;flex:none"/>
+        <button class="admin-add-btn" onclick="addStudent()">+ Add</button>
+      </div>
+      <div class="error-msg" id="adminError" style="text-align:left;margin-top:8px"></div>
+      <div class="success-msg" id="adminSuccess"></div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">Current Students</div>
+      <div id="studentsList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">MACH<br>1</div>
+    <div class="login-title">Student Planner</div>
+    <div class="login-sub">Enter your personal PIN to access your planner</div>
+    <div class="pin-display">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="numpad">
+      <button class="num-btn" onclick="enterDigit('1')">1</button>
+      <button class="num-btn" onclick="enterDigit('2')">2</button>
+      <button class="num-btn" onclick="enterDigit('3')">3</button>
+      <button class="num-btn" onclick="enterDigit('4')">4</button>
+      <button class="num-btn" onclick="enterDigit('5')">5</button>
+      <button class="num-btn" onclick="enterDigit('6')">6</button>
+      <button class="num-btn" onclick="enterDigit('7')">7</button>
+      <button class="num-btn" onclick="enterDigit('8')">8</button>
+      <button class="num-btn" onclick="enterDigit('9')">9</button>
+      <button class="num-btn clear" onclick="clearPin()">CLR</button>
+      <button class="num-btn zero" onclick="enterDigit('0')">0</button>
+      <button class="num-btn clear" onclick="backspace()">&#9003;</button>
+    </div>
+    <button class="start-btn" id="startBtn" onclick="checkPin()" disabled>START</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="header">
+    <div class="logo">MACH<br>1</div>
+    <div class="title-block">
+      <h1>Student Planner</h1>
+      <p id="studentNameDisplay"></p>
+    </div>
+    <div class="header-right">
+      <div class="notif-bell" onclick="showNotifications()">
+        <span class="bell-icon">🔔</span>
+        <div class="bell-badge" id="bellBadge">0</div>
+      </div>
+      <div class="xp-wrap">
+        <div class="xp-lbl">XP: <span id="xpVal">0</span></div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      </div>
+      <button class="admin-btn-small" id="adminBtn" style="display:none" onclick="openAdmin()">ADMIN</button>
+      <button class="signout-btn" onclick="signOut()">EXIT</button>
+    </div>
+  </div>
+
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="showTab('planner',this)">📋 Assignments</button>
+    <button class="main-tab" onclick="showTab('workshop',this)">🛠 Workshop</button>
+    <button class="main-tab" onclick="showTab('goals',this)">🎯 Goals</button>
+  </div>
+
+  <div class="panel active" id="panel-planner">
+    <div class="summary-row">
+      <div class="sum-box"><div class="sum-num" style="color:var(--orange)" id="sumTotal">0</div><div class="sum-lbl">Total</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--red)" id="sumLeft">0</div><div class="sum-lbl">Remaining</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--green)" id="sumDone">0</div><div class="sum-lbl">Done</div></div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('pending',this)">Pending</button>
+      <button class="filter-btn" onclick="setFilter('done',this)">Done</button>
+      <button class="filter-btn" onclick="setFilter('today',this)">Today</button>
+      <button class="filter-btn" onclick="setFilter('Friday',this)">Friday</button>
+      <button class="filter-btn" onclick="setFilter('Monday',this)">Monday</button>
+      <button class="filter-btn" onclick="setFilter('Tuesday',this)">Tuesday</button>
+    </div>
+    <div class="add-row">
+      <input class="add-input" id="newTitle" placeholder="Add new assignment..."/>
+      <select class="add-select" id="newSubject">
+        <option value="Science">Science</option>
+        <option value="ELA">ELA</option>
+        <option value="Math">Math</option>
+        <option value="Social Studies">Social Studies</option>
+        <option value="Other">Other</option>
+      </select>
+      <select class="add-select" id="newDay">
+        <option value="today">Due Today</option>
+        <option value="Friday">Due Friday</option>
+        <option value="Monday">Due Monday</option>
+        <option value="Tuesday">Due Tuesday</option>
+      </select>
+      <button class="add-btn" onclick="addAssignment()">+ Add</button>
+    </div>
+    <div id="plannerContainer"></div>
+  </div>
+
+  <div class="panel" id="panel-goals">
+    <div id="goalsContainer"></div>
+  </div>
+
+  <div class="panel" id="panel-workshop">
+    <div class="workshop-header">
+      <div class="workshop-title">Weekly Workshop List</div>
+      <div class="week-label-badge" id="currentWeekLabel"></div>
+    </div>
+    <div class="upload-zone" id="uploadZone" style="cursor:default">
+      <div class="upload-icon">&#128279;</div>
+      <div class="upload-text">Paste your Google Doc link below</div>
+      <div class="upload-sub">Publish your Google Doc and paste the published link</div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input class="add-input" id="gdocLinkInput" placeholder="https://docs.google.com/..." style="flex:1;font-size:11px"/>
+        <button class="add-btn" type="button" onclick="event.preventDefault();event.stopPropagation();loadFromGoogleDoc();return false;">Load</button>
+      </div>
+      <div id="gdocStatus" style="font-size:11px;margin-top:8px;color:var(--text2)"></div>
+    </div>
+    <div class="workshop-week-tabs" id="workshopWeekTabs"></div>
+    <div id="workshopContent"></div>
+    <div class="manual-add-row">
+      <input class="manual-input" id="workshopManualInput" placeholder="Or type an item and press Add..."/>
+      <button class="add-btn" onclick="addWorkshopItem()">+ Add</button>
+      <button class="clear-week-btn" onclick="clearCurrentWeek()">Clear Week</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STUDENT DATABASE (stored in localStorage per device) ──
+async function sb(table, method, body, query){
+  try {
+    var params = {table: table, method: method||'GET', query: query||''};
+    var isGet = (!method || method === 'GET');
+    var url = '/api/db';
+    var opts = {
+      method: isGet ? 'GET' : 'POST',
+      headers: {'Content-Type': 'application/json'}
+    };
+    if(isGet){
+      url += '?table=' + encodeURIComponent(table) + '&method=GET&query=' + encodeURIComponent(query||'');
+    } else {
+      opts.body = JSON.stringify({table: table, method: method, body: body, query: query||''});
+    }
+    var r = await fetch(url, opts);
+    var data = await r.json();
+    if(!r.ok) throw new Error(JSON.stringify(data));
+    return Array.isArray(data) ? data : [data];
+  } catch(e) {
+    console.error('DB error:', e);
+    throw e;
+  }
+}
+
+var ADMIN_PIN = '9999';
+var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
+
+function getStudents(){ try{ return JSON.parse(localStorage.getItem('sp_students')||'[]'); }catch(e){ return []; } }
+function saveStudents(s){ localStorage.setItem('sp_students',JSON.stringify(s)); }
+function getStudentData(pin){ try{ return JSON.parse(localStorage.getItem('sp_data_'+pin)||'null'); }catch(e){ return null; } }
+function saveStudentData(pin,data){ localStorage.setItem('sp_data_'+pin,JSON.stringify(data)); }
+
+// Seed default student Grayson if no students exist
+(function(){
+  var s = getStudents();
+  if(!s.length){
+    s = [{name:'Grayson',pin:'3896'}];
+    saveStudents(s);
+  }
+})();
+
+// ── PIN ──
+var pin='';
+function enterDigit(d){if(pin.length>=4)return;pin+=d;updateDots();document.getElementById('errorMsg').textContent='';if(pin.length===4)document.getElementById('startBtn').disabled=false;}
+function backspace(){pin=pin.slice(0,-1);document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
+function clearPin(){pin='';document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
+function updateDots(){for(var i=0;i<4;i++){document.getElementById('dot'+i).className='pin-dot'+(i<pin.length?' filled':'');}}
+
+function checkPin(){
+  if(pin===ADMIN_PIN){
+    isAdmin=true;
+    currentStudentPin='9999';
+    currentStudentName='Admin';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    clearPin();
+    initApp();
+    setTimeout(function(){ openAdmin(); },500);
+    return;
+  }
+  var students = getStudents();
+  var student = students.find(function(s){ return s.pin===pin; });
+  if(!student){
+    document.getElementById('errorMsg').textContent='WRONG CODE. TRY AGAIN.';
+    for(var i=0;i<4;i++) document.getElementById('dot'+i).className='pin-dot error';
+    var card=document.querySelector('.login-card');
+    card.classList.add('shake');
+    setTimeout(function(){card.classList.remove('shake');clearPin();},400);
+  } else {
+    currentStudentPin = pin;
+    currentStudentName = student.name;
+    isAdmin = false;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    initApp();
+  }
+}
+
+function signOut(){
+  saveCurrentData();
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  clearPin();
+  if(notifTimer) clearInterval(notifTimer);
+}
+
+// ── TABS ──
+function showTab(name,btn){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.main-tab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── ADMIN ──
+function openAdmin(){ renderStudentsList(); document.getElementById('adminOverlay').classList.add('show'); }
+function closeAdmin(){ document.getElementById('adminOverlay').classList.remove('show'); }
+
+function renderStudentsList(){
+  var students = getStudents();
+  var list = document.getElementById('studentsList');
+  if(!students.length){ list.innerHTML='<div class="empty-state" style="padding:12px;font-size:12px">No students yet!</div>'; return; }
+  list.innerHTML = students.map(function(s){
+    var data = getStudentData(s.pin);
+    var xp = data ? (data.xp||0) : 0;
+    return '<div class="student-row">'+
+      '<div class="student-row-name">'+s.name+'</div>'+
+      '<div class="student-row-pin">PIN: '+s.pin+'</div>'+
+      '<div class="student-row-xp">'+xp+' XP</div>'+
+      '<button style="background:none;border:1px solid #f59e0b;color:#f59e0b;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-right:6px" onclick="resetStudentDates(\''+s.pin+'\')"">RESET</button>'+
+      '<button class="student-del" onclick="deleteStudent(\''+s.pin+'\')">&#10005;</button>'+
+    '</div>';
+  }).join('');
+}
+
+async function addStudent(){
+  var name = document.getElementById('newStudentName').value.trim();
+  var p = document.getElementById('newStudentPin').value.trim();
+  var err = document.getElementById('adminError');
+  var suc = document.getElementById('adminSuccess');
+  err.textContent=''; suc.textContent='';
+  if(!name||!p){ err.textContent='Name and PIN required!'; return; }
+  if(p.length!==4||isNaN(Number(p))){ err.textContent='PIN must be exactly 4 digits!'; return; }
+  if(p===ADMIN_PIN){ err.textContent='That PIN is reserved for admin!'; return; }
+  try {
+    var existing = await sb('students','GET',null,'?pin=eq.'+p);
+    if(existing.length){ err.textContent='That PIN is already taken!'; return; }
+    await sb('students','POST',{name:name,pin:p,xp:0},null);
+    // Also save to localStorage as backup
+    var students = getStudents();
+    students.push({name:name,pin:p});
+    saveStudents(students);
+    document.getElementById('newStudentName').value='';
+    document.getElementById('newStudentPin').value='';
+    suc.textContent='Student '+name+' added!';
+    setTimeout(function(){ suc.textContent=''; },2000);
+    renderStudentsList();
+  } catch(e){
+    // Fallback to localStorage
+    var students = getStudents();
+    if(students.find(function(s){ return s.pin===p; })){ err.textContent='That PIN is already taken!'; return; }
+    students.push({name:name,pin:p});
+    saveStudents(students);
+    document.getElementById('newStudentName').value='';
+    document.getElementById('newStudentPin').value='';
+    suc.textContent='Student '+name+' added!';
+    setTimeout(function(){ suc.textContent=''; },2000);
+    renderStudentsList();
+  }
+}
+
+function resetStudentDates(pin){
+  if(!confirm('Reset dates for this student? XP and completed items will be kept.')) return;
+  var data = getStudentData(pin);
+  if(!data){ alert('No data found for this student.'); return; }
+  var t = new Date(); t.setHours(0,0,0,0);
+  function getThisWeekDay(dayNum){
+    var d = new Date(t);
+    var diff = dayNum - d.getDay();
+    if(diff < 0) diff += 7;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0,10);
+  }
+  if(data.assignments){
+    data.assignments.forEach(function(a){
+      if(!a.daily){
+        var due = new Date(a.dueStr + 'T00:00:00');
+        a.dueStr = getThisWeekDay(due.getDay());
+        a.done = false;
+      }
+    });
+  }
+  saveStudentData(pin, data);
+  alert('Done! Tell the student to refresh the app.');
+}
+
+function deleteStudent(p){
+  if(!confirm('Delete this student and all their data?')) return;
+  var students = getStudents().filter(function(s){ return s.pin!==p; });
+  saveStudents(students);
+  localStorage.removeItem('sp_data_'+p);
+  renderStudentsList();
+}
+
+// ── APP STATE ──
+var currentStudentPin = '';
+var currentStudentName = '';
+var currentStudentDbId = null;
+var isAdmin = false;
+var today, friday, monday, tuesday;
+var assignments = [];
+var xp = 0;
+var filter = 'all';
+var notifTimer = null;
+var workshopData = {};
+var workshopWeeks = [];
+var currentWorkshopWeek = '';
+var workshopNextId = 1;
+var nextAssignId = 100;
+var resetWeeklyAssignments = false;
+
+function getWeekKey(d){
+  var mon = new Date(d);
+  var day = mon.getDay();
+  var diff = day === 0 ? -6 : 1 - day;
+  mon.setDate(mon.getDate() + diff);
+  return mon.toISOString().slice(0,10);
+}
+var activeGoals = [];
+var PRESET_GOALS = [
+  {id:'ontime', icon:'⏰', name:'Get all work done on time', desc:'No overdue assignments'},
+  {id:'xp500', icon:'⭐', name:'Get 500 XP this week', desc:'Complete assignments to earn XP'},
+  {id:'read', icon:'📖', name:'Complete READ every single day', desc:'Check off READ daily without missing a day'}
+];
+
+var COLORS = {Science:'#059669',ELA:'#7c3aed',Math:'#0891b2','Social Studies':'#b45309',Other:'#4b5563'};
+
+function getDayName(dayNum){
+  var names = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return names[dayNum] || 'Friday';
+}
+
+function getNextDay(dayName){
+  var days={Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
+  var d=new Date(today);
+  var diff=days[dayName]-d.getDay();
+  if(diff<0) diff+=7;
+  d.setDate(d.getDate()+diff);
+  return d;
+}
+
+function saveCurrentData(){
+  var data = {
+    xp: xp,
+    assignments: assignments.map(function(a){
+      return {id:a.id,title:a.title,subject:a.subject,dueStr:a.due.toISOString().slice(0,10),priority:a.priority,daily:a.daily,done:a.done};
+    }),
+    workshopData: workshopData,
+    workshopWeeks: workshopWeeks,
+    activeGoals: activeGoals
+  };
+  saveStudentData(currentStudentPin, data);
+}
+
+function initApp(){
+  today=new Date(); today.setHours(0,0,0,0);
+  friday=getNextDay('Friday'); monday=getNextDay('Monday'); tuesday=getNextDay('Tuesday');
+  var todayStr = today.toISOString().slice(0,10);
+
+  document.getElementById('adminBtn').style.display = (isAdmin || currentStudentPin==='3896') ? 'block' : 'none';
+  document.getElementById('studentNameDisplay').textContent = currentStudentName + ' — ' + today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('notifName').textContent = 'Hey ' + currentStudentName + '!';
+  document.title = currentStudentName + "'s Planner";
+
+  // Check if it's a new week (Monday) and reset assignments
+  var lastResetWeek = localStorage.getItem('sp_last_reset_' + currentStudentPin);
+  var currentWeekKey = getWeekKey(today);
+  if(lastResetWeek !== currentWeekKey && today.getDay() === 1){
+    localStorage.setItem('sp_last_reset_' + currentStudentPin, currentWeekKey);
+    resetWeeklyAssignments = true;
+  } else {
+    resetWeeklyAssignments = false;
+  }
+
+  // Load saved data
+  var saved = getStudentData(currentStudentPin);
+  if(saved){
+    xp = saved.xp||0;
+    workshopData = saved.workshopData||{};
+    workshopWeeks = saved.workshopWeeks||[];
+    activeGoals = saved.activeGoals||[];
+    // Restore assignments
+    assignments = (saved.assignments||[]).map(function(a){
+      return {id:a.id,title:a.title,subject:a.subject,due:new Date(a.dueStr+'T00:00:00'),priority:a.priority||'medium',daily:a.daily||false,done:a.done||false};
+    });
+    // Reset READ for today
+    var readItem = assignments.find(function(a){ return a.daily; });
+    if(readItem){
+      if(readItem.due.toISOString().slice(0,10) !== todayStr){
+        readItem.due = new Date(today);
+        readItem.done = false;
+      }
+    } else {
+      assignments.push({id:99,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false});
+    }
+
+    // If it's Monday and a new week, reset all non-daily assignment due dates and done status
+    if(resetWeeklyAssignments){
+      assignments.forEach(function(a){
+        if(!a.daily){
+          // Roll due date to this week
+          var dueDay = a.due.getDay();
+          var newDue = getNextDay(getDayName(dueDay));
+          a.due = newDue;
+          a.done = false;
+        }
+      });
+    }
+  } else {
+    // Fresh start with default assignments
+    xp = 0;
+    workshopData = {}; workshopWeeks = [];
+    assignments = [
+      {id:1,title:'Cells Project',subject:'Science',due:new Date(friday),priority:'high',daily:false,done:false},
+      {id:2,title:'Science Camp Reflection',subject:'Science',due:new Date(monday),priority:'high',daily:false,done:false},
+      {id:3,title:'Greek/Latin Roots Work',subject:'ELA',due:new Date(friday),priority:'medium',daily:false,done:false},
+      {id:4,title:'ALWTW - Chapter Check Ins (Ch. 3-9)',subject:'ELA',due:new Date(friday),priority:'medium',daily:false,done:false},
+      {id:5,title:'Math Challenge - Wayground',subject:'Math',due:new Date(friday),priority:'medium',daily:false,done:false},
+      {id:6,title:'3-2-1 Non-fiction Reading Response (p.336-341)',subject:'ELA',due:new Date(friday),priority:'medium',daily:false,done:false},
+      {id:7,title:'Social Studies World Religions Article',subject:'Social Studies',due:new Date(tuesday),priority:'high',daily:false,done:false},
+      {id:8,title:'Practice Words for Walk Through',subject:'ELA',due:new Date(friday),priority:'low',daily:false,done:false},
+      {id:9,title:"Write More Ideas for Non-fiction Article (Writers Notebook)",subject:'ELA',due:new Date(friday),priority:'low',daily:false,done:false},
+      {id:10,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false}
+    ];
+  }
+
+  document.getElementById('xpVal').textContent = xp;
+  document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
+  updateSummary(); render();
+  initWorkshop();
+  initGoals();
+  setTimeout(function(){ showNotifications(); updateBell(); },800);
+  scheduleNotifications();
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+  // Auto-save every 30 seconds
+  setInterval(saveCurrentData, 30000);
+}
+
+function showToast(){ var t=document.getElementById('xpToast');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1500); }
+
+function toggle(id){
+  var a=assignments.find(function(x){ return x.id===id; });
+  if(!a) return;
+  a.done=!a.done;
+  if(a.done){ xp+=25; showToast(); } else { xp=Math.max(0,xp-25); }
+  document.getElementById('xpVal').textContent=xp;
+  document.getElementById('xpFill').style.width=Math.min(100,Math.round(xp/2.5))+'%';
+  updateSummary(); render(); updateBell(); saveCurrentData();
+  if(document.getElementById('panel-goals').classList.contains('active')) renderGoals();
+}
+
+function delAssignment(id){
+  assignments=assignments.filter(function(a){ return a.id!==id; });
+  updateSummary(); render(); saveCurrentData();
+}
+
+function addAssignment(){
+  var title=document.getElementById('newTitle').value.trim();
+  var subject=document.getElementById('newSubject').value;
+  var day=document.getElementById('newDay').value;
+  if(!title) return;
+  var dueMap={today:new Date(today),Friday:new Date(friday),Monday:new Date(monday),Tuesday:new Date(tuesday)};
+  assignments.push({id:nextAssignId++,title:title,subject:subject,due:dueMap[day],priority:'medium',daily:false,done:false});
+  document.getElementById('newTitle').value='';
+  updateSummary(); render(); saveCurrentData();
+}
+
+function updateSummary(){
+  var doneCount=assignments.filter(function(a){ return a.done; }).length;
+  document.getElementById('sumTotal').textContent=assignments.length;
+  document.getElementById('sumDone').textContent=doneCount;
+  document.getElementById('sumLeft').textContent=assignments.length-doneCount;
+}
+
+function setFilter(f,btn){ filter=f; document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); render(); }
+
+function getSiren(due,isDone){
+  if(isDone) return '';
+  var ad=new Date(due); ad.setHours(0,0,0,0);
+  var diff=Math.round((ad-today)/86400000);
+  if(diff<0) return '<div class="priority-dot siren-urgent">&#128680;</div>';
+  if(diff<=1) return '<div class="priority-dot siren-urgent">&#128680;</div>';
+  if(diff<=3) return '<div class="priority-dot">&#128276;</div>';
+  return '<div class="priority-dot">&#9989;</div>';
+}
+
+function chipClass(d){ var diff=Math.round((d-today)/86400000); if(diff<=0)return 'chip-blue'; if(diff<=2)return 'chip-orange'; return 'chip-green'; }
+function chipLabel(d){ var diff=Math.round((d-today)/86400000); if(diff<0)return 'OVERDUE'; if(diff===0)return 'TODAY'; if(diff===1)return 'TOMORROW'; return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+
+function makeCard(a){
+  var isDone=a.done;
+  var color=COLORS[a.subject]||COLORS['Other'];
+  return '<div class="hw-card'+(isDone?' done':'')+'">'+
+    '<div class="check'+(isDone?' on':'')+'" onclick="toggle('+a.id+')">'+(isDone?'&#10003;':'')+' </div>'+
+    '<div class="hw-body"><div class="hw-title">'+a.title+'</div><div class="hw-cat" style="color:'+color+'">'+a.subject+'</div></div>'+
+    '<div class="hw-right"><span class="due-chip '+chipClass(a.due)+'">'+chipLabel(a.due)+'</span>'+getSiren(a.due,isDone)+'</div>'+
+    (a.daily?'':'<button class="del-btn" onclick="delAssignment('+a.id+')">&#10005;</button>')+
+  '</div>';
+}
+
+function render(){
+  var dailyItems=assignments.filter(function(a){ return a.daily; });
+  var regularItems=assignments.filter(function(a){
+    if(a.daily) return false;
+    if(filter==='pending') return !a.done;
+    if(filter==='done') return a.done;
+    if(filter==='today'){ var ad=new Date(a.due); ad.setHours(0,0,0,0); return ad.getTime()===today.getTime(); }
+    if(filter==='Friday') return a.due.getDay()===5;
+    if(filter==='Monday') return a.due.getDay()===1;
+    if(filter==='Tuesday') return a.due.getDay()===2;
+    return true;
+  });
+  var regGroups={};
+  regularItems.forEach(function(a){ var k=a.due.toDateString(); if(!regGroups[k])regGroups[k]={date:a.due,items:[]}; regGroups[k].items.push(a); });
+  var regSorted=Object.values(regGroups).sort(function(a,b){ return a.date-b.date; });
+
+  var showDaily = filter==='done'?dailyItems.filter(function(a){return a.done;}):filter==='pending'?dailyItems.filter(function(a){return !a.done;}):dailyItems;
+  var todaySection='';
+  if(showDaily.length>0 && filter!=='Friday' && filter!=='Monday' && filter!=='Tuesday'){
+    todaySection='<div class="day-section"><div class="day-header"><span class="day-name">TODAY</span><span class="day-date">'+today.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</span><span class="daily-badge">DAILY</span><div class="day-line"></div></div>'+showDaily.map(makeCard).join('')+'</div>';
+  }
+  var regHTML=regSorted.map(function(group){
+    var isToday=group.date.toDateString()===today.toDateString();
+    var isOverdue=group.date<today&&!isToday;
+    var dayName=group.date.toLocaleDateString('en-US',{weekday:'long'}).toUpperCase();
+    var dayDate=group.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return '<div class="day-section"><div class="day-header"><span class="day-name">'+dayName+'</span><span class="day-date">'+dayDate+'</span>'+(isToday?'<span class="today-badge">TODAY</span>':'')+(isOverdue?'<span class="overdue-badge">OVERDUE</span>':'')+'<div class="day-line"></div></div>'+group.items.map(makeCard).join('')+'</div>';
+  }).join('');
+  var container=document.getElementById('plannerContainer');
+  container.innerHTML=todaySection+regHTML||'<div class="empty-state">Nothing here! 🎮</div>';
+}
+
+// ── NOTIFICATIONS ──
+function buildNotifications(){
+  var items=[];
+  assignments.forEach(function(a){
+    if(!a.done&&!a.daily){
+      var ad=new Date(a.due); ad.setHours(0,0,0,0);
+      var diff=Math.round((ad-today)/86400000);
+      if(diff<0) items.push({type:'overdue',text:'You need to finish "'+a.title+'" — it\'s overdue!',sub:a.subject,cls:'overdue',badge:'OVERDUE',badgeCls:'badge-red'});
+      else if(diff===0) items.push({type:'today',text:'Get started on "'+a.title+'" — it\'s due TODAY!',sub:a.subject,cls:'today',badge:'DUE TODAY',badgeCls:'badge-orange'});
+      else if(diff===1) items.push({type:'tomorrow',text:'"'+a.title+'" is due TOMORROW — don\'t wait!',sub:a.subject,cls:'tomorrow',badge:'DUE TOMORROW',badgeCls:'badge-yellow'});
+    }
+  });
+  var readDone=assignments.find(function(a){ return a.daily&&a.done; });
+  if(!readDone) items.push({type:'read',text:'Don\'t forget to READ today! It\'s a daily habit.',sub:'ELA — Daily',cls:'read',badge:'DAILY READ',badgeCls:'badge-blue'});
+  return items;
+}
+function updateBell(){ var items=buildNotifications(); var badge=document.getElementById('bellBadge'); if(items.length>0){badge.textContent=items.length;badge.classList.add('show');}else{badge.classList.remove('show');} }
+function showNotifications(){
+  var items=buildNotifications();
+  var list=document.getElementById('notifList');
+  if(!items.length){ list.innerHTML='<div class="notif-empty">🎉 You\'re all caught up! Amazing work!</div>'; }
+  else{ list.innerHTML=items.map(function(item){ return '<div class="notif-item '+item.cls+'"><div><span class="notif-badge '+item.badgeCls+'">'+item.badge+'</span></div><div class="notif-item-title">'+item.text+'</div><div class="notif-item-sub">'+item.sub+'</div></div>'; }).join(''); }
+  document.getElementById('notifOverlay').classList.add('show');
+}
+function closeNotif(){ document.getElementById('notifOverlay').classList.remove('show'); updateBell(); }
+function scheduleNotifications(){
+  notifTimer=setInterval(function(){
+    var now=new Date();
+    var matched=NOTIF_TIMES.some(function(t){ return now.getHours()===t.h&&now.getMinutes()===t.m; });
+    if(matched){ showNotifications(); sendBrowserNotifications(); }
+  },60000);
+}
+function sendBrowserNotifications(){
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  var items=buildNotifications();
+  var titles={overdue:'⚠️ Student Planner — Overdue!',today:'📌 Student Planner — Due Today!',tomorrow:'📅 Student Planner — Due Tomorrow!',read:'📖 Student Planner — READ Reminder',smart:'🎯 Student Planner — Goal Reminder'};
+  var max=Math.min(items.length,3);
+  for(var i=0;i<max;i++){(function(item,delay){ setTimeout(function(){ new Notification(titles[item.type]||'Student Planner',{body:item.text,tag:'planner-'+item.type,requireInteraction:true}); },delay); })(items[i],i*1500);}
+}
+
+// ── GOALS ──
+function initGoals(){ renderGoals(); }
+
+function getGoalProgress(goal){
+  if(goal.id==='ontime'||goal.type==='ontime'){
+    var overdue=assignments.filter(function(a){ return !a.daily&&!a.done&&a.due<today; }).length;
+    var total=assignments.filter(function(a){ return !a.daily; }).length;
+    var done=assignments.filter(function(a){ return !a.daily&&a.done; }).length;
+    var pct=total>0?Math.round((done/total)*100):0;
+    return {pct:pct,label:done+' of '+total+' done',color:'#10b981',complete:overdue===0&&done===total};
+  }
+  if(goal.id==='xp500'||goal.type==='xp500'){
+    var pct=Math.min(100,Math.round((xp/500)*100));
+    return {pct:pct,label:xp+' / 500 XP',color:'#f59e0b',complete:xp>=500};
+  }
+  if(goal.id==='read'||goal.type==='read'){
+    var readItem=assignments.find(function(a){ return a.daily; });
+    var done=readItem&&readItem.done;
+    return {pct:done?100:0,label:done?'Done today!':'Not done yet',color:'#7c3aed',complete:done};
+  }
+  // Custom goal
+  var pct=goal.done?100:0;
+  return {pct:pct,label:goal.done?'Complete!':'In progress',color:'#00e5ff',complete:goal.done};
+}
+
+function renderGoals(){
+  var container = document.getElementById('goalsContainer');
+  container.innerHTML = '';
+
+  // Active goals
+  if(activeGoals.length > 0){
+    var section = document.createElement('div');
+    section.className = 'active-goals';
+    var title = document.createElement('div');
+    title.className = 'preset-title';
+    title.textContent = 'Your Goals';
+    section.appendChild(title);
+
+    activeGoals.forEach(function(g){
+      var prog = getGoalProgress(g);
+      var gid = String(g.id || g.uid || '');
+
+      var card = document.createElement('div');
+      card.className = 'active-goal-card' + (prog.complete ? ' goal-complete' : '');
+
+      var header = document.createElement('div');
+      header.className = 'active-goal-header';
+
+      var icon = document.createElement('span');
+      icon.className = 'active-goal-icon';
+      icon.textContent = g.icon || String.fromCodePoint(127919);
+
+      var name = document.createElement('span');
+      name.className = 'active-goal-name';
+      name.textContent = g.name || '';
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'active-goal-del';
+      delBtn.textContent = String.fromCodePoint(10005);
+      delBtn.setAttribute('data-gid', gid);
+      delBtn.addEventListener('click', function(){
+        var id = this.getAttribute('data-gid');
+        activeGoals = activeGoals.filter(function(g){ return String(g.id||g.uid) !== id; });
+        saveCurrentData(); renderGoals(); updateBell();
+      });
+
+      header.appendChild(icon);
+      header.appendChild(name);
+      if(prog.complete){
+        var check = document.createElement('span');
+        check.style.color = 'var(--green)';
+        check.style.fontSize = '16px';
+        check.textContent = String.fromCodePoint(10003);
+        header.appendChild(check);
+      }
+      header.appendChild(delBtn);
+
+      var progLabel = document.createElement('div');
+      progLabel.style.cssText = 'font-size:11px;color:var(--text2);margin-bottom:6px';
+      progLabel.textContent = prog.label;
+
+      var barWrap = document.createElement('div');
+      barWrap.className = 'goal-bar-wrap';
+      var barFill = document.createElement('div');
+      barFill.className = 'goal-bar-fill';
+      barFill.style.width = prog.pct + '%';
+      barFill.style.background = prog.color;
+      barWrap.appendChild(barFill);
+
+      card.appendChild(header);
+      card.appendChild(progLabel);
+      card.appendChild(barWrap);
+
+      if(prog.complete){
+        var achDiv = document.createElement('div');
+        achDiv.style.cssText = 'font-size:11px;color:var(--green);margin-top:8px;font-family:Orbitron,monospace';
+        achDiv.textContent = String.fromCodePoint(127942) + ' GOAL ACHIEVED!';
+        card.appendChild(achDiv);
+      }
+      section.appendChild(card);
+    });
+    container.appendChild(section);
+  }
+
+  // Preset goals
+  var presetSection = document.createElement('div');
+  presetSection.className = 'preset-goals';
+  var presetTitle = document.createElement('div');
+  presetTitle.className = 'preset-title';
+  presetTitle.textContent = 'Add a Preset Goal';
+  presetSection.appendChild(presetTitle);
+
+  var grid = document.createElement('div');
+  grid.className = 'preset-grid';
+
+  PRESET_GOALS.forEach(function(pg){
+    var already = activeGoals.find(function(a){ return (a.id||a.type) === pg.id; });
+    var btn = document.createElement('button');
+    btn.className = 'preset-btn' + (already ? ' selected' : '');
+
+    var iconSpan = document.createElement('span');
+    iconSpan.className = 'preset-btn-icon';
+    iconSpan.textContent = pg.icon;
+
+    var nameText = document.createTextNode(pg.name);
+    var descDiv = document.createElement('div');
+    descDiv.style.cssText = 'font-size:10px;color:var(--text2);margin-top:4px';
+    descDiv.textContent = pg.desc;
+
+    btn.appendChild(iconSpan);
+    btn.appendChild(nameText);
+    btn.appendChild(descDiv);
+
+    btn.addEventListener('click', function(){
+      var id = pg.id;
+      var existIdx = activeGoals.findIndex(function(a){ return (a.id||a.type) === id; });
+      if(existIdx > -1){
+        activeGoals.splice(existIdx, 1);
+      } else {
+        var preset = PRESET_GOALS.find(function(p){ return p.id === id; });
+        activeGoals.push({id:id, icon:preset.icon, name:preset.name});
+      }
+      saveCurrentData(); renderGoals(); updateBell();
+    });
+    grid.appendChild(btn);
+  });
+  presetSection.appendChild(grid);
+  container.appendChild(presetSection);
+
+  // Custom goal button
+  var customTitle = document.createElement('div');
+  customTitle.className = 'preset-title';
+  customTitle.textContent = 'Set a Custom Goal';
+  container.appendChild(customTitle);
+
+  var customBtn = document.createElement('button');
+  customBtn.className = 'add-btn';
+  customBtn.style.cssText = 'width:100%;padding:14px;font-size:12px;margin-top:8px';
+  customBtn.textContent = '+ Set a Custom Goal';
+  customBtn.addEventListener('click', function(){ openWizard(); });
+  container.appendChild(customBtn);
+}
+
+function addPresetGoal(id){
+  var already=activeGoals.find(function(g){ return (g.id||g.type)===id; });
+  if(already){ removeGoal(id); return; }
+  var preset=PRESET_GOALS.find(function(g){ return g.id===id; });
+  if(!preset) return;
+  activeGoals.push({id:id,icon:preset.icon,name:preset.name});
+  saveCurrentData(); renderGoals(); updateBell();
+}
+
+function addCustomGoal(){ openWizard(); }
+
+function removeGoalById(btn){
+  var id=btn.getAttribute('data-gid');
+  activeGoals=activeGoals.filter(function(g){ return String(g.id||g.uid)!==String(id); });
+  saveCurrentData(); renderGoals(); updateBell();
+}
+function removeGoal(id){
+  activeGoals=activeGoals.filter(function(g){ return String(g.id||g.uid)!==String(id); });
+  saveCurrentData(); renderGoals(); updateBell();
+}
+
+function getSmartNotifications(){
+  var items=[];
+  activeGoals.forEach(function(g){
+    var prog=getGoalProgress(g);
+    if((g.id==='ontime'||g.type==='ontime')&&!prog.complete){
+      var upcoming=assignments.filter(function(a){
+        if(a.daily||a.done) return false;
+        var ad=new Date(a.due); ad.setHours(0,0,0,0);
+        var diff=Math.round((ad-today)/86400000);
+        return diff>=2&&diff<=4;
+      });
+      upcoming.forEach(function(a){
+        items.push({type:'smart',text:'You are on track! Get an early start on "'+a.title+'" — it is due '+chipLabel(a.due)+'.',sub:'Goal: Get all work done on time',cls:'notif-smart',badge:'EARLY START',badgeCls:'badge-cyan'});
+      });
+    }
+    if((g.id==='xp500'||g.type==='xp500')&&xp<500){
+      var needed=500-xp;
+      var remaining=assignments.filter(function(a){ return !a.done&&!a.daily; }).length;
+      if(remaining>0) items.push({type:'smart',text:'You need '+needed+' more XP to hit 500! You have '+remaining+' assignments left — each one earns 25 XP.',sub:'Goal: Get 500 XP this week',cls:'notif-smart',badge:'XP GOAL',badgeCls:'badge-cyan'});
+    }
+    if((g.id==='read'||g.type==='read')){
+      var readItem=assignments.find(function(a){ return a.daily; });
+      if(readItem&&!readItem.done) items.push({type:'smart',text:'Do not break your streak! Complete your READ for today to keep your daily goal alive.',sub:'Goal: Complete READ every single day',cls:'notif-smart',badge:'DAILY GOAL',badgeCls:'badge-cyan'});
+    }
+    // Big custom goals (college/career)
+    if(g.big && g.profile){
+      var smartMsgs = getSmartGoalMessages(g);
+      smartMsgs.forEach(function(m){ items.push(m); });
+    }
+  });
+  return items;
+}
+
+// ── WORKSHOP ──
+function getWeekLabel(d){ var mon=new Date(d); var day=mon.getDay(); var diff=day===0?-6:1-day; mon.setDate(mon.getDate()+diff); return 'Week of '+mon.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function initWorkshop(){
+  var weekLabel=getWeekLabel(today);
+  document.getElementById('currentWeekLabel').textContent=weekLabel;
+  if(!workshopData[weekLabel]){ workshopData[weekLabel]=[]; }
+  if(workshopWeeks.indexOf(weekLabel)===-1) workshopWeeks.unshift(weekLabel);
+  currentWorkshopWeek=weekLabel;
+  renderWorkshopTabs(); renderWorkshopItems();
+  // Load saved Google Doc URL if any
+  var savedUrl = localStorage.getItem('sp_gdoc_url_' + currentStudentPin);
+  if(savedUrl){ document.getElementById('gdocLinkInput').value = savedUrl; }
+}
+function loadFromGoogleDoc(e){ if(e){ e.preventDefault(); e.stopPropagation(); }
+  var url = document.getElementById('gdocLinkInput').value.trim();
+  if(!url){ document.getElementById('gdocStatus').textContent='Please paste a link first!'; return; }
+  document.getElementById('gdocStatus').textContent='Loading...';
+  document.getElementById('gdocStatus').style.color='var(--accent3)';
+  // Use our own Vercel API to fetch the Google Doc safely
+  fetch('/api/fetch?url=' + encodeURIComponent(url))
+    .then(function(r){ return r.text(); })
+    .then(function(html){
+      if(!html || html.length < 50){
+        document.getElementById('gdocStatus').textContent='Could not load. Make sure the doc is published publicly.';
+        document.getElementById('gdocStatus').style.color='var(--red)';
+        return;
+      }
+      processHTML(html);
+    })
+    .catch(function(){
+      document.getElementById('gdocStatus').textContent='Could not load. Make sure the doc is published publicly.';
+      document.getElementById('gdocStatus').style.color='var(--red)';
+    });
+  function dummy(){}
+  function processHTML(html){
+      // Handle both raw HTML and JSON wrapped response
+      var actualHtml = html;
+      try {
+        var parsed = JSON.parse(html);
+        if(parsed.contents) actualHtml = parsed.contents;
+      } catch(e){}
+      var data = {contents: actualHtml};
+      html = actualHtml;
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      var text = doc.body ? doc.body.innerText || doc.body.textContent : '';
+      var lines = text.split('\n')
+        .map(function(l){ return l.replace(/^\d+\.\s*/, '').replace(/^-+$/, '').trim(); })
+        .filter(function(l){ 
+          return l.length > 2 
+            && l.indexOf('Report abuse') === -1 
+            && l.indexOf('Published using') === -1 
+            && l.indexOf('Updated automatically') === -1 
+            && l.indexOf('Learn more') === -1 
+            && l.indexOf('Workshop List') === -1
+            && l.indexOf('docs.google.com') === -1; 
+        });
+      if(!lines.length){ document.getElementById('gdocStatus').textContent='No items found. Make sure the doc is published publicly.'; document.getElementById('gdocStatus').style.color='var(--red)'; return; }
+      var weekLabel = getWeekLabel(today);
+      workshopData[weekLabel] = lines.map(function(line){ return {id:workshopNextId++, text:line, done:false}; });
+      if(workshopWeeks.indexOf(weekLabel)===-1) workshopWeeks.unshift(weekLabel);
+      currentWorkshopWeek = weekLabel;
+      document.getElementById('currentWeekLabel').textContent = weekLabel;
+      localStorage.setItem('sp_gdoc_url_' + currentStudentPin, url);
+      document.getElementById('gdocStatus').textContent = lines.length + ' items loaded!';
+      document.getElementById('gdocStatus').style.color = 'var(--green)';
+      renderWorkshopTabs(); renderWorkshopItems(); saveCurrentData();
+  }
+}
+
+function renderWorkshopTabs(){ var tabs=document.getElementById('workshopWeekTabs'); if(workshopWeeks.length<=1){tabs.innerHTML='';return;} tabs.innerHTML=workshopWeeks.map(function(w){ return '<button class="wk-tab'+(w===currentWorkshopWeek?' active':'')+'" onclick="switchWorkshopWeek(\''+w+'\')">'+w+'</button>'; }).join(''); }
+function switchWorkshopWeek(w){ currentWorkshopWeek=w; renderWorkshopTabs(); renderWorkshopItems(); }
+function renderWorkshopItems(){
+  var items=workshopData[currentWorkshopWeek]||[];
+  var container=document.getElementById('workshopContent');
+  if(!items.length){ container.innerHTML='<div class="empty-state">No items yet! Upload a file or type below. 🛠</div>'; return; }
+  container.innerHTML='<div class="workshop-list">'+items.map(function(item,idx){
+    return '<div class="workshop-item'+(item.done?' done':'')+'">'+
+      '<div class="check'+(item.done?' on':'')+'" onclick="toggleWorkshop(\''+currentWorkshopWeek+'\','+item.id+')">'+(item.done?'&#10003;':'')+' </div>'+
+      '<div class="w-num">'+(idx+1)+'</div>'+
+      '<div class="w-title">'+item.text+'</div>'+
+      '<button class="w-del" onclick="delWorkshopItem(\''+currentWorkshopWeek+'\','+item.id+')">&#10005;</button>'+
+    '</div>';
+  }).join('')+'</div>';
+}
+function toggleWorkshop(week,id){
+  var items=workshopData[week]||[];
+  var item=items.find(function(i){ return i.id===id; });
+  if(item){ item.done=!item.done; if(item.done){ xp+=15; showToast(); document.getElementById('xpVal').textContent=xp; } }
+  renderWorkshopItems(); saveCurrentData();
+}
+function delWorkshopItem(week,id){ if(workshopData[week]) workshopData[week]=workshopData[week].filter(function(i){ return i.id!==id; }); renderWorkshopItems(); saveCurrentData(); }
+function addWorkshopItem(){ var val=document.getElementById('workshopManualInput').value.trim(); if(!val)return; if(!workshopData[currentWorkshopWeek])workshopData[currentWorkshopWeek]=[]; workshopData[currentWorkshopWeek].push({id:workshopNextId++,text:val,done:false}); document.getElementById('workshopManualInput').value=''; renderWorkshopItems(); saveCurrentData(); }
+function clearCurrentWeek(){ if(confirm('Clear all items for '+currentWorkshopWeek+'?')){ workshopData[currentWorkshopWeek]=[]; renderWorkshopItems(); saveCurrentData(); } }
+
+var wizardData = {goalText:'',grade:'6',strong:[],weak:[],gpa:'3.5'};
+var COLLEGE_KEYWORDS = ['stanford','harvard','yale','mit','college','university','medical','doctor','lawyer','engineer','scholarship','pre-med','pre-law'];
+var SPORTS_KEYWORDS = ['utr','tennis','basketball','soccer','football','swimming','baseball','softball','golf','volleyball','gymnastics','track','field','nba','nfl','nhl','mlb','mls','varsity','pro','d1','d2','d3','division','recruit','ranked','ranking','rating','bracket','tournament','championship','team','league','tryout'];
+
+var SPORTS_DATA = {
+  tennis: {
+    name: 'Tennis',
+    icon: '🎾',
+    levels: ['Beginner (UTR 1-2)','Intermediate (UTR 3-4)','Advanced (UTR 5-6)','Elite (UTR 7+)'],
+    weaknesses: ['Serve','Forehand','Backhand','Volleys','Mental game','Footwork','Strategy'],
+    notifications: [
+      'Top tennis players stay mentally sharp — finishing your homework early keeps your focus ready for practice!',
+      'Discipline on the court starts with discipline in the classroom. Get ahead of your assignments!',
+      'Great players manage their time off the court too. Clear your work before your tennis session today!',
+      'Roger Federer said focus is everything. Stay focused on your academics AND your tennis goals!'
+    ]
+  },
+  basketball: {
+    name: 'Basketball',
+    icon: '🏀',
+    levels: ['Recreational','JV Level','Varsity Level','Elite/AAU','College Level'],
+    weaknesses: ['Ball handling','Shooting','Defense','Court vision','Athleticism','Post moves','Free throws'],
+    notifications: [
+      'The best ballers are students first. Get your work done and hit the court with a clear mind!',
+      'Kobe Bryant said he outworked everyone — start with your homework before practice today!',
+      'Your basketball IQ grows when your overall mind is sharp. Stay on top of your assignments!',
+      'Coaches recruit students who perform in the classroom AND on the court. Keep both up!'
+    ]
+  },
+  soccer: {
+    name: 'Soccer',
+    icon: '⚽',
+    levels: ['Recreational','Club Level','Regional Elite','State Level','National Level'],
+    weaknesses: ['Finishing','Defending','Passing','Dribbling','Positioning','Heading','Fitness'],
+    notifications: [
+      'Elite soccer players are disciplined in everything they do — start with your homework!',
+      'Club coaches look at grades too. Keep your academics strong alongside your soccer game!',
+      'Great players prepare for every game — prepare for tomorrow by finishing your work today!',
+      'Soccer requires focus and strategy. Train your mind by staying on top of your assignments!'
+    ]
+  },
+  swimming: {
+    name: 'Swimming',
+    icon: '🏊',
+    levels: ['Recreational','Club Level','Regional Qualifier','State Qualifier','Elite/National'],
+    weaknesses: ['Flip turns','Start/dive','Stroke technique','Endurance','Speed','Breathing','Open water'],
+    notifications: [
+      'Swimmers train twice a day — your homework is your morning workout for your brain!',
+      'Shaving a second off your time takes discipline. Apply that same discipline to your schoolwork!',
+      'Elite swimmers manage packed schedules. Stay on top of assignments to keep your head above water!',
+      'Your strongest stroke in life is work ethic — show it in the classroom and the pool!'
+    ]
+  },
+  baseball: {
+    name: 'Baseball/Softball',
+    icon: '⚾',
+    levels: ['Recreational','Travel Ball','High School JV','High School Varsity','College Level'],
+    weaknesses: ['Hitting','Pitching','Fielding','Base running','Arm strength','Mental game','Speed'],
+    notifications: [
+      'The best players have a routine — make finishing homework part of your pre-practice routine!',
+      'Baseball is a thinking game. Keep your mind sharp by staying on top of your schoolwork!',
+      'Scouts look at your whole package — grades matter. Keep both your batting average and GPA high!',
+      'Great players stay disciplined between games. Apply that discipline to your assignments today!'
+    ]
+  },
+  football: {
+    name: 'Football',
+    icon: '🏈',
+    levels: ['Recreational','Middle School','JV Level','Varsity Level','College Prospect'],
+    weaknesses: ['Speed','Strength','Technique','Football IQ','Conditioning','Hands','Coverage'],
+    notifications: [
+      'Elite football players study film AND schoolwork. Get your assignments done today!',
+      'College recruiters check your GPA. Keep your grades as strong as your game!',
+      'The mental side of football is huge — train your brain with your homework today!',
+      'Championships are won in the off-season. Win your homework game today!'
+    ]
+  },
+  golf: {
+    name: 'Golf',
+    icon: '⛳',
+    levels: ['Beginner','Junior Club Level','Tournament Level','State Ranked','Elite Junior'],
+    weaknesses: ['Driving','Iron play','Short game','Putting','Course management','Mental game','Consistency'],
+    notifications: [
+      'Golf is 90 percent mental. Train your mind by finishing your assignments before you hit the range!',
+      'Every stroke counts in golf — and every assignment counts toward your future. Stay on top of both!',
+      'Great golfers have incredible focus. Practice that focus by completing your schoolwork today!',
+      'Tiger Woods was an excellent student. Follow his lead — ace your assignments AND your game!'
+    ]
+  },
+  volleyball: {
+    name: 'Volleyball',
+    icon: '🏐',
+    levels: ['Recreational','Club Level','JV Level','Varsity Level','College Prospect'],
+    weaknesses: ['Serving','Passing','Setting','Hitting','Blocking','Defense','Communication'],
+    notifications: [
+      'Great volleyball players communicate and coordinate — same skills you use to manage your assignments!',
+      'Club coaches want well-rounded athletes. Keep your grades strong alongside your volleyball game!',
+      'Volleyball takes total focus — clear your homework so you can focus fully at practice!',
+      'Every set and spike takes practice. Every assignment completed builds your future. Keep going!'
+    ]
+  },
+  gymnastics: {
+    name: 'Gymnastics',
+    icon: '🤸',
+    levels: ['Recreational','Level 1-3','Level 4-6','Level 7-9','Level 10/Elite'],
+    weaknesses: ['Strength','Flexibility','Tumbling','Balance beam','Bars','Vault','Mental block'],
+    notifications: [
+      'Gymnasts are the most disciplined athletes in the world — show that discipline in your schoolwork!',
+      'Elite gymnastics requires total body AND mind control. Stay sharp academically today!',
+      'Your routine on the floor takes precision — apply that same precision to your assignments!',
+      'Champions do the work when nobody is watching. Finish your homework and then hit the gym!'
+    ]
+  }
+};
+
+function isCollegeGoal(text){
+  var lower = text.toLowerCase();
+  return COLLEGE_KEYWORDS.some(function(k){ return lower.indexOf(k) > -1; }) && !isSportsGoal(text);
+}
+
+function isSportsGoal(text){
+  var lower = text.toLowerCase();
+  return SPORTS_KEYWORDS.some(function(k){ return lower.indexOf(k) > -1; });
+}
+
+function detectSport(text){
+  var lower = text.toLowerCase();
+  if(lower.indexOf('tennis') > -1 || lower.indexOf('utr') > -1) return 'tennis';
+  if(lower.indexOf('basketball') > -1 || lower.indexOf('nba') > -1) return 'basketball';
+  if(lower.indexOf('soccer') > -1 || lower.indexOf('mls') > -1) return 'soccer';
+  if(lower.indexOf('swim') > -1) return 'swimming';
+  if(lower.indexOf('baseball') > -1 || lower.indexOf('softball') > -1) return 'baseball';
+  if(lower.indexOf('football') > -1 || lower.indexOf('nfl') > -1) return 'football';
+  if(lower.indexOf('golf') > -1) return 'golf';
+  if(lower.indexOf('volleyball') > -1) return 'volleyball';
+  if(lower.indexOf('gymnastic') > -1) return 'gymnastics';
+  return null;
+}
+
+function openWizard(){
+  wizardData = {goalText:'',grade:'6',strong:[],weak:[],gpa:'3.5'};
+  document.getElementById('wGoalText').value = '';
+  document.querySelectorAll('.wizard-chip').forEach(function(c){ c.classList.remove('on'); });
+  showWizardStep(0);
+  document.getElementById('wizardOverlay').classList.add('show');
+}
+
+function closeWizard(){
+  document.getElementById('wizardOverlay').classList.remove('show');
+}
+
+function showWizardStep(n){
+  document.querySelectorAll('.wizard-step').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('wStep'+n).classList.add('active');
+  var prog = document.getElementById('wizardProgress');
+  prog.innerHTML = '';
+  for(var i = 0; i < 6; i++){
+    var cls = i < n ? 'done' : i === n ? 'active' : '';
+    prog.innerHTML += '<div class="wizard-dot ' + cls + '"></div>';
+  }
+}
+
+function wNext(step){
+  if(step === 0){
+    var txt = document.getElementById('wGoalText').value.trim();
+    if(!txt) return;
+    wizardData.goalText = txt;
+    wizardData.sport = detectSport(txt);
+    if(wizardData.sport){
+      showSportsWizard(wizardData.sport);
+      return;
+    }
+    if(!isCollegeGoal(txt)){ buildWizardSummary(); showWizardStep(5); return; }
+  }
+  if(step === 1) wizardData.grade = document.getElementById('wGrade').value;
+  if(step === 2) wizardData.strong = getSelectedChips('wStrongChips');
+  if(step === 3) wizardData.weak = getSelectedChips('wWeakChips');
+  if(step === 4){ wizardData.gpa = document.getElementById('wGPA').value; buildWizardSummary(); }
+  showWizardStep(step + 1);
+}
+
+function showSportsWizard(sport){
+  var sd = SPORTS_DATA[sport];
+  if(!sd){ buildWizardSummary(); showWizardStep(5); return; }
+  
+  // Build a custom sports wizard panel in step 5 (summary step)
+  document.getElementById('wSummaryTitle').textContent = sd.icon + ' ' + sd.name + ' Goal Setup';
+  var card = document.getElementById('wSummaryCard');
+  
+  card.innerHTML = 
+    '<div style="margin-bottom:12px"><label class="wizard-label">Current level</label>' +
+    '<select class="wizard-select" id="wSportLevel">' +
+    sd.levels.map(function(l){ return '<option>'+l+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div style="margin-bottom:12px"><label class="wizard-label">Days per week you practice</label>' +
+    '<select class="wizard-select" id="wSportDays">' +
+    ['1 day','2 days','3 days','4 days','5 days','6 days','7 days'].map(function(d){ return '<option>'+d+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div style="margin-bottom:4px"><label class="wizard-label">Biggest weakness</label>' +
+    '<div class="wizard-chip-row" id="wSportWeakChips">' +
+    sd.weaknesses.map(function(w){ return '<div class="wizard-chip" onclick="toggleChip(this)">'+w+'</div>'; }).join('') +
+    '</div></div>';
+
+  // Override save button
+  document.querySelector('.wizard-btn.primary[onclick="saveWizardGoal()"]').onclick = function(){ saveSportsGoal(sport); };
+  showWizardStep(5);
+}
+
+function saveSportsGoal(sport){
+  var sd = SPORTS_DATA[sport];
+  var level = document.getElementById('wSportLevel') ? document.getElementById('wSportLevel').value : '';
+  var days = document.getElementById('wSportDays') ? document.getElementById('wSportDays').value : '';
+  var weakChips = Array.from(document.querySelectorAll('#wSportWeakChips .wizard-chip.on')).map(function(c){ return c.textContent.trim(); });
+  
+  var uid = 'custom-' + Date.now();
+  activeGoals.push({
+    uid: uid, id: uid,
+    icon: sd.icon,
+    name: wizardData.goalText,
+    done: false, custom: true, big: false,
+    sport: sport,
+    sportProfile: {level: level, days: days, weaknesses: weakChips}
+  });
+  saveCurrentData(); closeWizard(); renderGoals(); updateBell();
+}
+
+function wBack(step){ showWizardStep(step - 1); }
+
+function toggleChip(el){ el.classList.toggle('on'); }
+
+function getSelectedChips(containerId){
+  return Array.from(document.querySelectorAll('#' + containerId + ' .wizard-chip.on')).map(function(c){ return c.textContent.trim(); });
+}
+
+function buildWizardSummary(){
+  var isBig = isCollegeGoal(wizardData.goalText);
+  document.getElementById('wSummaryTitle').textContent = isBig ? 'Your Goal Profile' : 'Confirm Your Goal';
+  var card = document.getElementById('wSummaryCard');
+  var rows = '<div class="goal-profile-row"><span class="goal-profile-label">Goal</span><span class="goal-profile-val">' + wizardData.goalText + '</span></div>';
+  if(isBig){
+    rows += '<div class="goal-profile-row"><span class="goal-profile-label">Grade</span><span class="goal-profile-val">Grade ' + wizardData.grade + '</span></div>';
+    rows += '<div class="goal-profile-row"><span class="goal-profile-label">Strong</span><span class="goal-profile-val">' + (wizardData.strong.join(', ') || 'None') + '</span></div>';
+    rows += '<div class="goal-profile-row"><span class="goal-profile-label">Weak</span><span class="goal-profile-val">' + (wizardData.weak.join(', ') || 'None') + '</span></div>';
+    rows += '<div class="goal-profile-row"><span class="goal-profile-label">Target GPA</span><span class="goal-profile-val">' + wizardData.gpa + '</span></div>';
+  }
+  card.innerHTML = rows;
+}
+
+function saveWizardGoal(){
+  var isBig = isCollegeGoal(wizardData.goalText);
+  var uid = 'custom-' + Date.now();
+  activeGoals.push({
+    uid: uid, id: uid,
+    icon: isBig ? '&#127891;' : '&#127919;',
+    name: wizardData.goalText,
+    done: false, custom: true, big: isBig,
+    profile: isBig ? {grade:wizardData.grade, strong:wizardData.strong, weak:wizardData.weak, gpa:wizardData.gpa} : null
+  });
+  // Restore save button onclick
+  var btn = document.querySelector('.wizard-btn.primary');
+  if(btn) btn.onclick = saveWizardGoal;
+  saveCurrentData(); closeWizard(); renderGoals(); updateBell();
+}
+
+function getSmartGoalMessages(goal){
+  var msgs = [];
+  
+  // Sports goal notifications
+  if(goal.sport && goal.sportProfile){
+    var sd = SPORTS_DATA[goal.sport];
+    if(sd){
+      // Rotate through sport-specific motivational notifications
+      var notifIdx = Math.floor(Date.now() / 86400000) % sd.notifications.length;
+      var pendingCount = assignments.filter(function(a){ return !a.done && !a.daily; }).length;
+      if(pendingCount > 0){
+        msgs.push({type:'smart', text:sd.notifications[notifIdx], sub:'Goal: ' + goal.name, cls:'notif-smart', badge:sd.icon + ' SPORT GOAL', badgeCls:'badge-cyan'});
+      }
+      // Weakness-specific nudge
+      if(goal.sportProfile.weaknesses && goal.sportProfile.weaknesses.length > 0){
+        var overdueAssign = assignments.find(function(a){ return !a.done && !a.daily && new Date(a.due) < today; });
+        if(overdueAssign){
+          msgs.push({type:'smart', text:'Working on your ' + goal.sportProfile.weaknesses[0] + ' takes focus — clear your overdue work first so you can train with a clear mind!', sub:'Goal: ' + goal.name, cls:'notif-smart', badge:'CLEAR YOUR PLATE', badgeCls:'badge-cyan'});
+        }
+      }
+    }
+    return msgs;
+  }
+  
+  if(!goal.big || !goal.profile) return msgs;
+  var profile = goal.profile;
+  assignments.forEach(function(a){
+    if(a.done || a.daily) return;
+    var ad = new Date(a.due); ad.setHours(0,0,0,0);
+    var diff = Math.round((ad - today) / 86400000);
+    if(profile.weak.indexOf(a.subject) > -1 && diff >= 0 && diff <= 3){
+      msgs.push({type:'smart', text:a.subject + ' is one of your weaker areas. Get "' + a.title + '" done early to stay on track toward ' + goal.name + '!', sub:'Goal: ' + goal.name, cls:'notif-smart', badge:'WEAK SUBJECT', badgeCls:'badge-cyan'});
+    } else if(diff >= 2 && diff <= 4 && parseFloat(profile.gpa) >= 3.8){
+      msgs.push({type:'smart', text:'Students aiming for a ' + profile.gpa + ' GPA start early. Get ahead on "' + a.title + '" before it is due ' + chipLabel(a.due) + '.', sub:'Goal: ' + goal.name, cls:'notif-smart', badge:'EARLY START', badgeCls:'badge-cyan'});
+    }
+  });
+  return msgs;
+}
+
+</script>
+
+<div class="wizard-overlay" id="wizardOverlay">
+  <div class="wizard-panel">
+    <div class="wizard-progress" id="wizardProgress"></div>
+
+    <div class="wizard-step active" id="wStep0">
+      <div class="wizard-title">What is your goal?</div>
+      <div class="wizard-sub">Tell us what you are working towards. Be specific!</div>
+      <label class="wizard-label">Your goal</label>
+      <input class="wizard-input" id="wGoalText" placeholder="e.g. Get into Stanford, Become a doctor, Make the varsity team..."/>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="closeWizard()">Cancel</button>
+        <button class="wizard-btn primary" onclick="wNext(0)">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wStep1">
+      <div class="wizard-title">What grade are you in?</div>
+      <div class="wizard-sub">This helps us understand your timeline.</div>
+      <label class="wizard-label">Current grade</label>
+      <select class="wizard-select" id="wGrade">
+        <option value="6">6th Grade</option>
+        <option value="7">7th Grade</option>
+        <option value="8">8th Grade</option>
+        <option value="9">9th Grade (Freshman)</option>
+        <option value="10">10th Grade (Sophomore)</option>
+        <option value="11">11th Grade (Junior)</option>
+        <option value="12">12th Grade (Senior)</option>
+      </select>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="wBack(1)">Back</button>
+        <button class="wizard-btn primary" onclick="wNext(1)">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wStep2">
+      <div class="wizard-title">What are your strongest subjects?</div>
+      <div class="wizard-sub">Pick all that apply.</div>
+      <div class="wizard-chip-row" id="wStrongChips">
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">Math</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">Science</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">ELA</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">Social Studies</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">Art</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'strong')">PE</div>
+      </div>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="wBack(2)">Back</button>
+        <button class="wizard-btn primary" onclick="wNext(2)">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wStep3">
+      <div class="wizard-title">What are your weakest subjects?</div>
+      <div class="wizard-sub">Be honest — these get extra attention in your notifications.</div>
+      <div class="wizard-chip-row" id="wWeakChips">
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">Math</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">Science</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">ELA</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">Social Studies</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">Art</div>
+        <div class="wizard-chip" onclick="toggleChip(this,'weak')">PE</div>
+      </div>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="wBack(3)">Back</button>
+        <button class="wizard-btn primary" onclick="wNext(3)">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wStep4">
+      <div class="wizard-title">What is your target GPA?</div>
+      <div class="wizard-sub">This helps calibrate how urgently we remind you about assignments.</div>
+      <label class="wizard-label">Target GPA</label>
+      <select class="wizard-select" id="wGPA">
+        <option value="4.0">4.0 — Perfect</option>
+        <option value="3.8">3.8 — Near perfect</option>
+        <option value="3.5">3.5 — Honor roll</option>
+        <option value="3.0">3.0 — Above average</option>
+        <option value="2.5">2.5 — Average</option>
+      </select>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="wBack(4)">Back</button>
+        <button class="wizard-btn primary" onclick="wNext(4)">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wStep5">
+      <div class="wizard-title" id="wSummaryTitle">Your Goal Profile</div>
+      <div class="wizard-sub">Here is what we will use to personalize your planner.</div>
+      <div class="goal-profile-card" id="wSummaryCard"></div>
+      <div class="wizard-btn-row">
+        <button class="wizard-btn secondary" onclick="wBack(5)">Back</button>
+        <button class="wizard-btn primary" onclick="saveWizardGoal()">Save Goal &#10003;</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
