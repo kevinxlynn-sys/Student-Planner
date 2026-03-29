@@ -1339,6 +1339,14 @@ function renderGoals(){
       }
       header.appendChild(delBtn);
 
+      if(g.big && g.breakdown){
+        var bdBtn = document.createElement('button');
+        bdBtn.textContent = 'VIEW BREAKDOWN';
+        bdBtn.style.cssText = 'background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-left:6px;font-weight:bold';
+        bdBtn.onclick = (function(uid){ return function(){ showBreakdown(uid); }; })(gid);
+        header.appendChild(bdBtn);
+      }
+
       var progLabel = document.createElement('div');
       progLabel.style.cssText = 'font-size:11px;color:var(--text2);margin-bottom:6px';
       progLabel.textContent = prog.label;
@@ -1801,12 +1809,14 @@ function buildWizardSummary(){
 function saveWizardGoal(){
   var isBig = isCollegeGoal(wizardData.goalText);
   var uid = 'custom-' + Date.now();
+  var bd = isBig ? generateBreakdown({grade:wizardData.grade,strong:wizardData.strong,weak:wizardData.weak,gpa:wizardData.gpa}) : null;
   activeGoals.push({
     uid: uid, id: uid,
     icon: isBig ? '&#127891;' : '&#127919;',
     name: wizardData.goalText,
     done: false, custom: true, big: isBig,
-    profile: isBig ? {grade:wizardData.grade, strong:wizardData.strong, weak:wizardData.weak, gpa:wizardData.gpa} : null
+    profile: isBig ? {grade:wizardData.grade, strong:wizardData.strong, weak:wizardData.weak, gpa:wizardData.gpa} : null,
+    breakdown: bd
   });
   // Restore save button onclick
   var btn = document.querySelector('.wizard-btn.primary');
