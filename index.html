@@ -701,14 +701,15 @@ function initApp(){
       var dayOfWeek = originalDue.getDay();
       var todayDay = today.getDay();
       var diff = dayOfWeek - todayDay;
-      // If today is Saturday(6) or Sunday(0), days Mon-Fri with negative diff are NEXT week
-      // Only show overdue if the day was earlier THIS week (not wrapping to next week)
-      // Rule: if diff < 0 AND abs(diff) < today's day number, it's overdue this week
-      // Otherwise it's upcoming next week
-      var isOverdue = diff < 0 && (todayDay + diff) >= 0;
-      if(!isOverdue && diff < 0) diff += 7; // push to next week
       var due = new Date(today);
-      due.setDate(today.getDate() + diff);
+      if(todayDay===6){
+        if(dayOfWeek===5){due.setDate(today.getDate()-1);}
+        else{if(diff<=0)diff+=7;due.setDate(today.getDate()+diff);}
+      } else if(todayDay===0){
+        if(diff<=0)diff+=7;due.setDate(today.getDate()+diff);
+      } else {
+        due.setDate(today.getDate()+diff);
+      }
       return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false};
     });
     // Reset READ for today
