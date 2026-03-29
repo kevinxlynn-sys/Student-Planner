@@ -631,10 +631,16 @@ function getDayName(dayNum){
 function getNextDay(dayName){
   var days={Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
   var d=new Date(today);
-  var todayDay = d.getDay();
-  var diff=days[dayName]-todayDay;
-  var isOverdue = diff < 0 && (todayDay + diff) >= 0;
-  if(!isOverdue && diff < 0) diff += 7;
+  var targetDay=days[dayName];
+  var todayDay=d.getDay();
+  var diff=targetDay-todayDay;
+  if(todayDay===6){
+    if(targetDay===5){d.setDate(d.getDate()-1);return d;}
+    if(diff<=0)diff+=7;
+    d.setDate(d.getDate()+diff);
+    return d;
+  }
+  if(todayDay===0){if(diff<=0)diff+=7;d.setDate(d.getDate()+diff);return d;}
   d.setDate(d.getDate()+diff);
   return d;
 }
@@ -1583,4 +1589,3 @@ function getSmartGoalMessages(goal){
 </div>
 </body>
 </html>
-
