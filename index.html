@@ -242,6 +242,8 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .goal-profile-row:last-child{border-bottom:none}
 .goal-profile-label{color:var(--text2)}
 .goal-profile-val{color:var(--accent3);font-family:'Orbitron',monospace;font-size:11px}
+.add-input::placeholder{color:var(--text2)}
+.add-select option{background:var(--surface2);color:var(--text)}
 </style>
 </head>
 <body>
@@ -284,32 +286,82 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 </div>
 
 <div id="loginScreen">
-  <div class="login-card">
+  <div class="login-card" style="max-width:420px">
     <div class="login-logo">MACH<br>1</div>
     <div class="login-title">Student Planner</div>
-    <div class="login-sub">Enter your personal PIN to access your planner</div>
-    <div class="pin-display">
-      <div class="pin-dot" id="dot0"></div>
-      <div class="pin-dot" id="dot1"></div>
-      <div class="pin-dot" id="dot2"></div>
-      <div class="pin-dot" id="dot3"></div>
+
+    <!-- Login/Signup tabs -->
+    <div style="display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:20px">
+      <button id="tabLogin" onclick="switchAuthTab('login')" style="flex:1;padding:8px;border:none;background:var(--accent2);color:#fff;font-family:'Orbitron',monospace;font-size:10px;border-radius:7px;cursor:pointer;letter-spacing:.5px">LOGIN</button>
+      <button id="tabSignup" onclick="switchAuthTab('signup')" style="flex:1;padding:8px;border:none;background:none;color:var(--text2);font-family:'Orbitron',monospace;font-size:10px;border-radius:7px;cursor:pointer;letter-spacing:.5px">SIGN UP</button>
     </div>
-    <div class="numpad">
-      <button class="num-btn" onclick="enterDigit('1')">1</button>
-      <button class="num-btn" onclick="enterDigit('2')">2</button>
-      <button class="num-btn" onclick="enterDigit('3')">3</button>
-      <button class="num-btn" onclick="enterDigit('4')">4</button>
-      <button class="num-btn" onclick="enterDigit('5')">5</button>
-      <button class="num-btn" onclick="enterDigit('6')">6</button>
-      <button class="num-btn" onclick="enterDigit('7')">7</button>
-      <button class="num-btn" onclick="enterDigit('8')">8</button>
-      <button class="num-btn" onclick="enterDigit('9')">9</button>
-      <button class="num-btn clear" onclick="clearPin()">CLR</button>
-      <button class="num-btn zero" onclick="enterDigit('0')">0</button>
-      <button class="num-btn clear" onclick="backspace()">&#9003;</button>
+
+    <!-- LOGIN PANEL -->
+    <div id="loginPanel">
+      <div class="login-sub">Enter your 4-digit PIN to access your planner</div>
+      <div class="pin-display">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="enterDigit('1')">1</button>
+        <button class="num-btn" onclick="enterDigit('2')">2</button>
+        <button class="num-btn" onclick="enterDigit('3')">3</button>
+        <button class="num-btn" onclick="enterDigit('4')">4</button>
+        <button class="num-btn" onclick="enterDigit('5')">5</button>
+        <button class="num-btn" onclick="enterDigit('6')">6</button>
+        <button class="num-btn" onclick="enterDigit('7')">7</button>
+        <button class="num-btn" onclick="enterDigit('8')">8</button>
+        <button class="num-btn" onclick="enterDigit('9')">9</button>
+        <button class="num-btn clear" onclick="clearPin()">CLR</button>
+        <button class="num-btn zero" onclick="enterDigit('0')">0</button>
+        <button class="num-btn clear" onclick="backspace()">&#9003;</button>
+      </div>
+      <button class="start-btn" id="startBtn" onclick="checkPin()" disabled>START</button>
+      <div class="error-msg" id="errorMsg"></div>
     </div>
-    <button class="start-btn" id="startBtn" onclick="checkPin()" disabled>START</button>
-    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- SIGNUP PANEL -->
+    <div id="signupPanel" style="display:none">
+      <div class="login-sub">Create your account to get started</div>
+      <input class="add-input" id="signupFirst" placeholder="First name..." style="width:100%;margin-bottom:10px;display:block"/>
+      <input class="add-input" id="signupLast" placeholder="Last name..." style="width:100%;margin-bottom:10px;display:block"/>
+      <select class="add-select" id="signupGrade" style="width:100%;margin-bottom:10px;display:block">
+        <option value="">Select your grade...</option>
+        <option value="6">6th Grade</option>
+        <option value="7">7th Grade</option>
+        <option value="8">8th Grade</option>
+        <option value="9">9th Grade</option>
+        <option value="10">10th Grade</option>
+        <option value="11">11th Grade</option>
+        <option value="12">12th Grade</option>
+      </select>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-family:'Orbitron',monospace;letter-spacing:.5px">CHOOSE A 4-DIGIT PIN</div>
+      <div class="pin-display" id="signupPinDisplay">
+        <div class="pin-dot" id="sdot0"></div>
+        <div class="pin-dot" id="sdot1"></div>
+        <div class="pin-dot" id="sdot2"></div>
+        <div class="pin-dot" id="sdot3"></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="enterSignupDigit('1')">1</button>
+        <button class="num-btn" onclick="enterSignupDigit('2')">2</button>
+        <button class="num-btn" onclick="enterSignupDigit('3')">3</button>
+        <button class="num-btn" onclick="enterSignupDigit('4')">4</button>
+        <button class="num-btn" onclick="enterSignupDigit('5')">5</button>
+        <button class="num-btn" onclick="enterSignupDigit('6')">6</button>
+        <button class="num-btn" onclick="enterSignupDigit('7')">7</button>
+        <button class="num-btn" onclick="enterSignupDigit('8')">8</button>
+        <button class="num-btn" onclick="enterSignupDigit('9')">9</button>
+        <button class="num-btn clear" onclick="clearSignupPin()">CLR</button>
+        <button class="num-btn zero" onclick="enterSignupDigit('0')">0</button>
+        <button class="num-btn clear" onclick="backspaceSignup()">&#9003;</button>
+      </div>
+      <div class="error-msg" id="signupMsg" style="min-height:18px;margin-bottom:8px"></div>
+      <button class="start-btn" id="signupBtn" onclick="createAccount()" disabled>CREATE ACCOUNT</button>
+    </div>
   </div>
 </div>
 
@@ -442,7 +494,12 @@ function saveStudentData(pin,data){ localStorage.setItem('sp_data_'+pin,JSON.str
   var s = getStudents();
   var hasGrayson = s.find(function(x){ return x.pin==='3896'; });
   if(!hasGrayson){
-    s.push({name:'Grayson',pin:'3896'});
+    s.push({name:'G-Lynn',pin:'3896',grade:'6'});
+    saveStudents(s);
+  } else {
+    // Update name and grade if already exists
+    hasGrayson.name = 'G-Lynn';
+    hasGrayson.grade = '6';
     saveStudents(s);
   }
 })();
@@ -453,6 +510,89 @@ function enterDigit(d){if(pin.length>=4)return;pin+=d;updateDots();document.getE
 function backspace(){pin=pin.slice(0,-1);document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
 function clearPin(){pin='';document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
 function updateDots(){for(var i=0;i<4;i++){document.getElementById('dot'+i).className='pin-dot'+(i<pin.length?' filled':'');}}
+
+var signupPin = '';
+
+function switchAuthTab(tab){
+  if(tab==='login'){
+    document.getElementById('loginPanel').style.display='block';
+    document.getElementById('signupPanel').style.display='none';
+    document.getElementById('tabLogin').style.background='var(--accent2)';
+    document.getElementById('tabLogin').style.color='#fff';
+    document.getElementById('tabSignup').style.background='none';
+    document.getElementById('tabSignup').style.color='var(--text2)';
+  } else {
+    document.getElementById('loginPanel').style.display='none';
+    document.getElementById('signupPanel').style.display='block';
+    document.getElementById('tabSignup').style.background='var(--accent2)';
+    document.getElementById('tabSignup').style.color='#fff';
+    document.getElementById('tabLogin').style.background='none';
+    document.getElementById('tabLogin').style.color='var(--text2)';
+  }
+}
+
+function enterSignupDigit(d){
+  if(signupPin.length>=4) return;
+  signupPin+=d;
+  updateSignupDots();
+  document.getElementById('signupMsg').textContent='';
+  document.getElementById('signupMsg').style.color='var(--red)';
+  if(signupPin.length===4) checkSignupPin();
+}
+function backspaceSignup(){ signupPin=signupPin.slice(0,-1); updateSignupDots(); document.getElementById('signupBtn').disabled=true; }
+function clearSignupPin(){ signupPin=''; updateSignupDots(); document.getElementById('signupBtn').disabled=true; }
+function updateSignupDots(){ for(var i=0;i<4;i++){ document.getElementById('sdot'+i).className='pin-dot'+(i<signupPin.length?' filled':''); } }
+
+async function checkSignupPin(){
+  if(signupPin===ADMIN_PIN){ document.getElementById('signupMsg').textContent='That PIN is reserved. Choose another.'; clearSignupPin(); return; }
+  try {
+    var existing = getStudents().find(function(s){ return s.pin===signupPin; });
+    if(existing){
+      document.getElementById('signupMsg').textContent='That PIN is already taken! Try a different one.';
+      document.getElementById('signupMsg').style.color='var(--red)';
+      setTimeout(function(){ clearSignupPin(); },1000);
+      return;
+    }
+    // Also check Supabase
+    var dbCheck = await sb('students','GET',null,'?pin=eq.'+signupPin);
+    if(dbCheck.length){
+      document.getElementById('signupMsg').textContent='That PIN is already taken! Try a different one.';
+      document.getElementById('signupMsg').style.color='var(--red)';
+      setTimeout(function(){ clearSignupPin(); },1000);
+      return;
+    }
+    document.getElementById('signupMsg').textContent='PIN available! ✓';
+    document.getElementById('signupMsg').style.color='var(--green)';
+    document.getElementById('signupBtn').disabled=false;
+  } catch(e){
+    // Fallback - just allow it
+    document.getElementById('signupMsg').textContent='PIN set! ✓';
+    document.getElementById('signupMsg').style.color='var(--green)';
+    document.getElementById('signupBtn').disabled=false;
+  }
+}
+
+async function createAccount(){
+  var first=document.getElementById('signupFirst').value.trim();
+  var last=document.getElementById('signupLast').value.trim();
+  var grade=document.getElementById('signupGrade').value;
+  var msg=document.getElementById('signupMsg');
+  if(!first||!last){ msg.textContent='Please enter your first and last name.'; msg.style.color='var(--red)'; return; }
+  if(!grade){ msg.textContent='Please select your grade.'; msg.style.color='var(--red)'; return; }
+  if(signupPin.length!==4){ msg.textContent='Please choose a 4-digit PIN.'; msg.style.color='var(--red)'; return; }
+  var fullName = first + ' ' + last;
+  msg.textContent='Creating account...'; msg.style.color='var(--accent3)';
+  try {
+    await sb('students','POST',{name:fullName,pin:signupPin,xp:0,grade:grade},null);
+  } catch(e){ console.log('DB save failed, using localStorage'); }
+  var students = getStudents();
+  students.push({name:fullName,pin:signupPin,grade:grade});
+  saveStudents(students);
+  currentStudentPin=signupPin; currentStudentName=fullName; isAdmin=false;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  initApp();
+}
 
 function checkPin(){
   if(pin===ADMIN_PIN){
