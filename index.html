@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -374,6 +375,54 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
   </div>
 </div>
 
+<div id="tutorialOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:1000;overflow-y:auto">
+  <div style="max-width:480px;margin:0 auto;padding:30px 20px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:'Orbitron',monospace;font-size:22px;color:var(--accent);letter-spacing:2px">STUDENT PLANNER</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">Quick Tour</div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:28px">
+      <div class="tut-dot active" id="tstep0"></div>
+      <div class="tut-dot" id="tstep1"></div>
+      <div class="tut-dot" id="tstep2"></div>
+      <div class="tut-dot" id="tstep3"></div>
+      <div class="tut-dot" id="tstep4"></div>
+    </div>
+    <div id="tut0" class="tut-panel">
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">👋</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">HEY THERE!</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.7;text-align:center">Welcome to Student Planner! This quick tour shows you how everything works. Takes about a minute!</div>
+    </div>
+    <div id="tut1" class="tut-panel" style="display:none">
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">📋</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">ASSIGNMENTS TAB</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.7">Track all your homework here.<br><br>🚨 <b>Red siren</b> = Overdue<br>🔔 <b>Bell</b> = Coming up soon<br>✅ <b>Green</b> = Plenty of time<br><br>Check things off to earn <b>+25 XP!</b></div>
+    </div>
+    <div id="tut2" class="tut-panel" style="display:none">
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🛠</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">WORKSHOP TAB</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.7">Your weekly workshop list lives here.<br><br>Copy your list, paste it in the box, and click <b>Load List</b>.<br><br>Check off items to earn <b>+15 XP!</b></div>
+    </div>
+    <div id="tut3" class="tut-panel" style="display:none">
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🎯</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">GOALS TAB</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.7">The most powerful part!<br><br>Set a big goal — college, sports, career. The app sends <b>personalized notifications</b> every day built around YOUR goal.</div>
+    </div>
+    <div id="tut4" class="tut-panel" style="display:none">
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🔔</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">NOTIFICATIONS</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.7">Real reminders at:<br><br>☀️ <b>7:00 AM</b> every morning<br>🏫 <b>2:40 PM</b> after school<br><br>Allow notifications when asked!<br><br><div style="text-align:center;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent3);margin-top:12px">You're all set! Let's go! 🚀</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:28px">
+      <button id="tutBack" onclick="tutNav(-1)" style="display:none;flex:1;padding:12px;background:none;border:1px solid var(--border);color:var(--text2);font-family:'Orbitron',monospace;font-size:11px;border-radius:10px;cursor:pointer">BACK</button>
+      <button id="tutNext" onclick="tutNav(1)" style="flex:1;padding:12px;background:var(--accent2);border:none;color:#fff;font-family:'Orbitron',monospace;font-size:11px;border-radius:10px;cursor:pointer">NEXT →</button>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="skipTutorial()" style="background:none;border:none;color:var(--text2);font-size:11px;cursor:pointer;text-decoration:underline">Skip tutorial</button>
+    </div>
+  </div>
+</div>
+
 <div id="appScreen">
   <div class="header">
     <div class="logo">MACH<br>1</div>
@@ -733,8 +782,9 @@ function resetStudentDates(pin){
   alert('Done! Tell the student to refresh the app.');
 }
 
-function deleteStudent(p){
+async function deleteStudent(p){
   if(!confirm('Delete this student and all their data?')) return;
+  try { await sb('students','DELETE',null,'?pin=eq.'+p); } catch(e){ console.log('DB delete failed'); }
   var students = getStudents().filter(function(s){ return s.pin!==p; });
   saveStudents(students);
   localStorage.removeItem('sp_data_'+p);
