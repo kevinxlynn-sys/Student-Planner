@@ -485,6 +485,11 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
     <div id="plannerContainer"></div>
   </div>
 
+  <div id="panel-badges" class="tab-panel" style="display:none">
+    <div style="font-size:13px;color:var(--accent);font-weight:bold;letter-spacing:1px;margin-bottom:16px">YOUR BADGES</div>
+    <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
+    <div id="badgesEmpty" style="display:none;text-align:center;padding:40px;color:var(--text2);font-size:13px">No badges yet! Keep working!</div>
+  </div>
   <div class="panel" id="panel-goals">
     <div id="goalsContainer"></div>
   </div>
@@ -789,6 +794,128 @@ async function deleteStudent(p){
   saveStudents(students);
   localStorage.removeItem('sp_data_'+p);
   renderStudentsList();
+}
+
+
+var BADGE_DEFS = [
+  {id:'read7',icon:'🔥',name:'On Fire!',desc:'7-day READ streak'},
+  {id:'read14',icon:'📚',name:'Bookworm',desc:'14-day READ streak'},
+  {id:'read30',icon:'🌟',name:'Legend Reader',desc:'30-day READ streak'},
+  {id:'xp100',icon:'⚡',name:'Spark',desc:'Earned 100 XP'},
+  {id:'xp500',icon:'💥',name:'Power Up',desc:'Earned 500 XP'},
+  {id:'xp1000',icon:'🏆',name:'Champion',desc:'Earned 1000 XP'},
+  {id:'xp2500',icon:'👑',name:'Legend',desc:'Earned 2500 XP'},
+  {id:'ontime7',icon:'✅',name:'On Point',desc:'No late assignments for a week'},
+  {id:'workshop1',icon:'🛠',name:'Workshop Pro',desc:'Completed a full workshop list'},
+  {id:'goal1',icon:'🎯',name:'Goal Setter',desc:'Set your first goal'},
+  {id:'goal_big',icon:'🎓',name:'Dream Big',desc:'Set a college or career goal'},
+  {id:'perfect_week',icon:'💎',name:'Perfect Week',desc:'Completed everything in a week'},
+];
+var earnedBadges = [];
+var readStreak = 0;
+var lastReadDate = null;
+
+function hasBadge(id){ return earnedBadges.some(function(b){ return b.id===id; }); }
+
+function checkBadges(){
+  var newBadges = [];
+  var todayStr = today ? today.toISOString().slice(0,10) : '';
+  if(xp>=100&&!hasBadge('xp100')) newBadges.push('xp100');
+  if(xp>=500&&!hasBadge('xp500')) newBadges.push('xp500');
+  if(xp>=1000&&!hasBadge('xp1000')) newBadges.push('xp1000');
+  if(xp>=2500&&!hasBadge('xp2500')) newBadges.push('xp2500');
+  if(activeGoals&&activeGoals.length>0&&!hasBadge('goal1')) newBadges.push('goal1');
+  if(activeGoals&&activeGoals.some(function(g){return g.big;})&&!hasBadge('goal_big')) newBadges.push('goal_big');
+  var readItem=assignments&&assignments.find(function(a){return a.daily&&a.done;});
+  if(readItem&&todayStr){
+    if(lastReadDate){
+      var diff=Math.round((today-new Date(lastReadDate+'T00:00:00'))/86400000);
+      if(diff===1) readStreak++; else if(diff>1) readStreak=1;
+    } else { readStreak=1; }
+    lastReadDate=todayStr;
+  }
+  if(readStreak>=7&&!hasBadge('read7')) newBadges.push('read7');
+  if(readStreak>=14&&!hasBadge('read14')) newBadges.push('read14');
+  if(readStreak>=30&&!hasBadge('read30')) newBadges.push('read30');
+  var nd=assignments&&assignments.filter(function(a){return !a.daily;});
+  if(nd&&nd.length>0&&nd.every(function(a){return a.done;})&&!hasBadge('perfect_week')) newBadges.push('perfect_week');
+  newBadges.forEach(function(id){
+    earnedBadges.push({id:id,earnedOn:todayStr});
+    var def=BADGE_DEFS.find(function(b){return b.id===id;});
+    if(def) setTimeout(function(){showBadgePopup(def);},600);
+  });
+  if(newBadges.length) saveCurrentData();
+}
+
+function showBadgePopup(def){
+  var old=document.getElementById('badgePopup');
+  if(old) old.parentNode.removeChild(old);
+  var popup=document.createElement('div');
+  popup.id='badgePopup';
+  popup.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:2px solid var(--accent2);border-radius:20px;padding:32px;text-align:center;z-index:3000;min-width:260px;box-shadow:0 0 40px rgba(124,58,237,.4)';
+  var h='<div style="font-size:56px;margin-bottom:12px">'+def.icon+'</div>';
+  h+='<div style="font-size:11px;color:var(--accent2);letter-spacing:2px;margin-bottom:6px;font-weight:bold">BADGE UNLOCKED!</div>';
+  h+='<div style="font-size:18px;color:var(--text);font-weight:bold;margin-bottom:6px">'+def.name+'</div>';
+  h+='<div style="font-size:13px;color:var(--text2);margin-bottom:20px">'+def.desc+'</div>';
+  var awBtn=document.createElement('button');awBtn.textContent='AWESOME!';awBtn.style.cssText='padding:10px 24px;background:var(--accent2);border:none;color:#fff;border-radius:10px;cursor:pointer;font-weight:bold;font-size:13px';awBtn.onclick=function(){var p=document.getElementById('badgePopup');if(p)p.parentNode.removeChild(p);};popup.appendChild(awBtn);
+
+  document.body.appendChild(popup);
+  setTimeout(function(){var p=document.getElementById('badgePopup');if(p)p.parentNode.removeChild(p);},5000);
+}
+
+function renderBadges(){
+  var grid=document.getElementById('badgesGrid');
+  var empty=document.getElementById('badgesEmpty');
+  if(!grid) return;
+  var html='';
+  BADGE_DEFS.forEach(function(def){
+    var earned=earnedBadges.find(function(b){return b.id===def.id;});
+    html+='<div style="background:'+(earned?'var(--surface2)':'var(--surface)')+';border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;opacity:'+(earned?'1':'0.3')+'">';
+    html+='<div style="font-size:32px;margin-bottom:8px">'+def.icon+'</div>';
+    html+='<div style="font-size:11px;color:var(--text);font-weight:bold;margin-bottom:4px">'+def.name+'</div>';
+    html+='<div style="font-size:10px;color:var(--text2)">'+def.desc+'</div>';
+    if(earned) html+='<div style="font-size:9px;color:var(--accent3);margin-top:6px">'+earned.earnedOn+'</div>';
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+  if(empty) empty.style.display=earnedBadges.length?'none':'block';
+}
+
+function generateBreakdown(profile){
+  var bd=[];
+  bd.push({category:'Daily Habits',color:'var(--accent)',items:[{text:'Read every single day',progress:0,target:7,unit:'days this week'},{text:'No late assignments',progress:0,target:1,unit:'week streak'}]});
+  bd.push({category:'Weekly Targets',color:'var(--accent2)',items:[{text:'Earn 500 XP',progress:0,target:500,unit:'XP'},{text:'Complete all assignments',progress:0,target:1,unit:'week'}]});
+  if(profile&&profile.weak&&profile.weak.length){
+    bd.push({category:'Subject Goals',color:'var(--accent3)',items:profile.weak.slice(0,2).map(function(s){return {text:'Extra study: '+s,progress:0,target:3,unit:'sessions'};})});
+  }
+  if(profile&&profile.gpa){
+    bd.push({category:'Long Term',color:'var(--orange)',items:[{text:'Maintain '+profile.gpa+' GPA',progress:0,target:1,unit:'term'},{text:'Join 2+ extracurriculars',progress:0,target:2,unit:'activities'}]});
+  }
+  return bd;
+}
+
+function showBreakdown(uid){
+  var goal=activeGoals.find(function(g){return g.uid===uid;});
+  if(!goal||!goal.breakdown) return;
+  var old=document.getElementById('breakdownOverlay');
+  if(old) old.parentNode.removeChild(old);
+  var overlay=document.createElement('div');
+  overlay.id='breakdownOverlay';
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+  var card=document.createElement('div');
+  card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto';
+  var rows='';
+  goal.breakdown.forEach(function(sec){
+    rows+='<div style="margin-bottom:18px"><div style="font-size:10px;color:'+sec.color+';font-weight:bold;margin-bottom:10px">'+sec.category.toUpperCase()+'</div>';
+    sec.items.forEach(function(item){
+      var pct=Math.min(100,Math.round((item.progress/item.target)*100));
+      rows+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--text)">'+item.text+'</span><span style="font-size:10px;color:var(--text2)">'+item.progress+'/'+item.target+' '+item.unit+'</span></div><div style="height:6px;background:var(--surface2);border-radius:3px"><div style="height:100%;width:'+pct+'%;background:'+sec.color+';border-radius:3px"></div></div></div>';
+    });
+    rows+='</div>';
+  });
+  var cbtn=document.createElement('button');cbtn.textContent='LETS GO!';cbtn.style.cssText='width:100%;padding:12px;background:var(--accent2);border:none;color:#fff;font-size:11px;border-radius:10px;cursor:pointer;font-weight:bold';cbtn.onclick=function(){var o=document.getElementById('breakdownOverlay');if(o)o.parentNode.removeChild(o);};card.appendChild(cbtn);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
 }
 
 // ── APP STATE ──
