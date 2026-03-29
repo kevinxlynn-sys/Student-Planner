@@ -770,7 +770,7 @@ function toggle(id){
   var a=assignments.find(function(x){ return x.id===id; });
   if(!a) return;
   a.done=!a.done;
-  if(a.done){ xp+=25; showToast(); } else { xp=Math.max(0,xp-25); }
+  if(a.done){ xp+=25; showToast(); localStorage.setItem('sp_last_activity_'+currentStudentPin, today.toISOString().slice(0,10)); } else { xp=Math.max(0,xp-25); }
   document.getElementById('xpVal').textContent=xp;
   document.getElementById('xpFill').style.width=Math.min(100,Math.round(xp/2.5))+'%';
   updateSummary(); render(); updateBell(); saveCurrentData();
@@ -856,6 +856,7 @@ function render(){
   }).join('');
   var container=document.getElementById('plannerContainer');
   container.innerHTML=todaySection+regHTML||'<div class="empty-state">Nothing here! 🎮</div>';
+  updateBell();
 }
 
 // ── NOTIFICATIONS ──
