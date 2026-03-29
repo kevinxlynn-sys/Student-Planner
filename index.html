@@ -244,6 +244,10 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .goal-profile-val{color:var(--accent3);font-family:'Orbitron',monospace;font-size:11px}
 .add-input::placeholder{color:var(--text2)}
 .add-select option{background:var(--surface2);color:var(--text)}
+.tut-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:.3s}
+.tut-dot.active{background:var(--accent2);width:24px;border-radius:4px}
+.tut-panel{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -597,6 +601,8 @@ async function createAccount(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   initApp();
+  // Show tutorial for new accounts
+  setTimeout(function(){ showTutorial(); }, 500);
 }
 
 function checkPin(){
@@ -810,6 +816,39 @@ function saveCurrentData(){
     activeGoals: activeGoals
   };
   saveStudentData(currentStudentPin, data);
+}
+
+var tutStep = 0;
+var totalTutSteps = 5;
+
+function showTutorial(){
+  document.getElementById('tutorialOverlay').style.display='block';
+  tutStep=0;
+  renderTutStep();
+}
+
+function skipTutorial(){
+  document.getElementById('tutorialOverlay').style.display='none';
+  localStorage.setItem('sp_tut_done_'+currentStudentPin,'1');
+}
+
+function tutNav(dir){
+  tutStep+=dir;
+  if(tutStep>=totalTutSteps){ skipTutorial(); return; }
+  if(tutStep<0) tutStep=0;
+  renderTutStep();
+}
+
+function renderTutStep(){
+  for(var i=0;i<totalTutSteps;i++){
+    var p=document.getElementById('tut'+i);
+    var d=document.getElementById('tstep'+i);
+    if(p) p.style.display=i===tutStep?'block':'none';
+    if(d) d.className='tut-dot'+(i===tutStep?' active':'');
+  }
+  document.getElementById('tutBack').style.display=tutStep>0?'flex':'none';
+  var nextBtn=document.getElementById('tutNext');
+  nextBtn.textContent=tutStep===totalTutSteps-1?'GET STARTED 🚀':'NEXT →';
 }
 
 function initApp(){
