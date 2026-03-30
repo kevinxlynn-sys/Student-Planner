@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -898,35 +898,43 @@ function generateBreakdown(profile){
 function showBreakdown(uid){
   var goal=activeGoals.find(function(g){return g.uid===uid;});
   if(!goal||!goal.breakdown) return;
-  var oldEl=document.getElementById('breakdownOverlay');
-  if(oldEl) oldEl.parentNode.removeChild(oldEl);
-  var overlay=document.createElement('div');overlay.id='breakdownOverlay';
+  var old=document.getElementById('breakdownOverlay');
+  if(old) old.parentNode.removeChild(old);
+  var overlay=document.createElement('div');
+  overlay.id='breakdownOverlay';
   overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
   var card=document.createElement('div');
   card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto';
-  var t1=document.createElement('div');t1.style.cssText='font-size:10px;color:var(--accent);font-weight:bold;margin-bottom:4px;letter-spacing:1px';t1.textContent='GOAL BREAKDOWN';card.appendChild(t1);
-  var t2=document.createElement('div');t2.style.cssText='font-size:16px;color:var(--text);font-weight:bold;margin-bottom:20px';t2.textContent=goal.name;card.appendChild(t2);
+  var rows='';
   goal.breakdown.forEach(function(sec){
-    var sd=document.createElement('div');sd.style.marginBottom='18px';
-    var st=document.createElement('div');st.style.cssText='font-size:10px;font-weight:bold;margin-bottom:10px;color:'+sec.color;st.textContent=sec.category.toUpperCase();sd.appendChild(st);
+    rows+='<div style="margin-bottom:18px"><div style="font-size:10px;color:'+sec.color+';font-weight:bold;margin-bottom:10px">'+sec.category.toUpperCase()+'</div>';
     sec.items.forEach(function(item){
       var pct=Math.min(100,Math.round((item.progress/item.target)*100));
-      var iD=document.createElement('div');iD.style.marginBottom='10px';
-      var rw=document.createElement('div');rw.style.cssText='display:flex;justify-content:space-between;margin-bottom:4px';
-      var lb=document.createElement('span');lb.style.cssText='font-size:12px;color:var(--text)';lb.textContent=item.text;
-      var cn=document.createElement('span');cn.style.cssText='font-size:10px;color:var(--text2)';cn.textContent=item.progress+'/'+item.target+' '+item.unit;
-      rw.appendChild(lb);rw.appendChild(cn);iD.appendChild(rw);
-      var bar=document.createElement('div');bar.style.cssText='height:6px;background:var(--surface2);border-radius:3px';
-      var fill=document.createElement('div');fill.style.cssText='height:100%;width:'+pct+'%;background:'+sec.color+';border-radius:3px';
-      bar.appendChild(fill);iD.appendChild(bar);sd.appendChild(iD);
+      rows+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--text)">'+item.text+'</span><span style="font-size:10px;color:var(--text2)">'+item.progress+'/'+item.target+' '+item.unit+'</span></div><div style="height:6px;background:var(--surface2);border-radius:3px"><div style="height:100%;width:'+pct+'%;background:'+sec.color+';border-radius:3px"></div></div></div>';
     });
-    card.appendChild(sd);
+    rows+='</div>';
   });
-  var cb=document.createElement('button');cb.textContent='LETS GO!';
-  cb.style.cssText='width:100%;padding:12px;background:var(--accent2);border:none;color:#fff;font-size:11px;border-radius:10px;cursor:pointer;font-weight:bold;margin-top:8px';
-  cb.onclick=function(){var o=document.getElementById('breakdownOverlay');if(o)o.parentNode.removeChild(o);};
-  card.appendChild(cb);overlay.appendChild(card);document.body.appendChild(overlay);
+  var cbtn=document.createElement('button');cbtn.textContent='LETS GO!';cbtn.style.cssText='width:100%;padding:12px;background:var(--accent2);border:none;color:#fff;font-size:11px;border-radius:10px;cursor:pointer;font-weight:bold';cbtn.onclick=function(){var o=document.getElementById('breakdownOverlay');if(o)o.parentNode.removeChild(o);};card.appendChild(cbtn);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
 }
+
+// ── APP STATE ──
+var currentStudentPin = '';
+var currentStudentName = '';
+var currentStudentDbId = null;
+var isAdmin = false;
+var today, friday, monday, tuesday;
+var assignments = [];
+var xp = 0;
+var filter = 'all';
+var notifTimer = null;
+var workshopData = {};
+var workshopWeeks = [];
+var currentWorkshopWeek = '';
+var workshopNextId = 1;
+var nextAssignId = 100;
+var resetWeeklyAssignments = false;
 
 function getWeekKey(d){
   var mon = new Date(d);
