@@ -1116,7 +1116,7 @@ function initApp(){
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
-  setTimeout(function(){ updateSummary(); render(); checkBadges(); }, 0);
+  setTimeout(function(){ updateSummary(); render(); }, 0);
   initWorkshop();
   initGoals();
   setTimeout(function(){ showNotifications(); updateBell(); },800);
