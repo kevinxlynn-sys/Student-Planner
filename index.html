@@ -486,7 +486,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
     <div id="plannerContainer"></div>
   </div>
 
-  <div id="panel-badges" class="tab-panel" style="display:none">
+  <div id="panel-badges" class="panel">
     <div style="font-size:13px;color:var(--accent);font-weight:bold;letter-spacing:1px;margin-bottom:16px">YOUR BADGES</div>
     <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
     <div id="badgesEmpty" style="display:none;text-align:center;padding:40px;color:var(--text2);font-size:13px">No badges yet! Keep working!</div>
@@ -547,6 +547,12 @@ async function sb(table, method, body, query){
 
 var ADMIN_PIN = '9999';
 var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
+var filter = 'all';
+var today, friday, monday, tuesday;
+var xp = 0, assignments = [], activeGoals = [];
+var workshopData = {}, workshopWeeks = [];
+var currentStudentPin = '', currentStudentName = '', isAdmin = false;
+var notifTimer = null, resetWeeklyAssignments = false;
 
 function getStudents(){ try{ return JSON.parse(localStorage.getItem('sp_students')||'[]'); }catch(e){ return []; } }
 function saveStudents(s){ localStorage.setItem('sp_students',JSON.stringify(s)); }
@@ -704,6 +710,8 @@ function showTab(name,btn){
   document.querySelectorAll('.main-tab').forEach(function(b){b.classList.remove('active');});
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='goals') renderGoals();
+  if(name==='badges') renderBadges();
 }
 
 // ── ADMIN ──
@@ -1022,7 +1030,12 @@ function renderTutStep(){
 }
 
 function initApp(){
+  filter = 'all';
   today=new Date(); today.setHours(0,0,0,0);
+  // Reset filter button UI
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  var allBtn = document.querySelector('.filter-btn');
+  if(allBtn) allBtn.classList.add('active');
   friday=getNextDay('Friday'); monday=getNextDay('Monday'); tuesday=getNextDay('Tuesday');
   var todayStr = today.toISOString().slice(0,10);
 
@@ -1048,22 +1061,10 @@ function initApp(){
     workshopData = saved.workshopData||{};
     workshopWeeks = saved.workshopWeeks||[];
     activeGoals = saved.activeGoals||[];
-    // Restore assignments - recalculate due dates based on day of week
+    // Restore assignments - use saved dates directly, don't recalculate
     assignments = (saved.assignments||[]).map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
-      var originalDue = new Date(a.dueStr+'T00:00:00');
-      var dayOfWeek = originalDue.getDay();
-      var todayDay = today.getDay();
-      var diff = dayOfWeek - todayDay;
-      var due = new Date(today);
-      if(todayDay===6){
-        if(dayOfWeek===5){due.setDate(today.getDate()-1);}
-        else{if(diff<=0)diff+=7;due.setDate(today.getDate()+diff);}
-      } else if(todayDay===0){
-        if(diff<=0)diff+=7;due.setDate(today.getDate()+diff);
-      } else {
-        due.setDate(today.getDate()+diff);
-      }
+      var due = new Date(a.dueStr+'T00:00:00');
       return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false};
     });
     // Reset READ for today
@@ -1109,7 +1110,7 @@ function initApp(){
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
-  updateSummary(); render();
+  setTimeout(function(){ updateSummary(); render(); }, 0);
   initWorkshop();
   initGoals();
   setTimeout(function(){ showNotifications(); updateBell(); },800);
@@ -1210,7 +1211,8 @@ function render(){
     return '<div class="day-section"><div class="day-header"><span class="day-name">'+dayName+'</span><span class="day-date">'+dayDate+'</span>'+(isToday?'<span class="today-badge">TODAY</span>':'')+(isOverdue?'<span class="overdue-badge">OVERDUE</span>':'')+'<div class="day-line"></div></div>'+group.items.map(makeCard).join('')+'</div>';
   }).join('');
   var container=document.getElementById('plannerContainer');
-  container.innerHTML=todaySection+regHTML||'<div class="empty-state">Nothing here! 🎮</div>';
+  var combined = todaySection + regHTML;
+  container.innerHTML = combined || '<div class="empty-state">Nothing here! 🎮</div>';
   updateBell();
 }
 
