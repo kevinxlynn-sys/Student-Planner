@@ -991,7 +991,10 @@ function saveCurrentData(){
     }),
     workshopData: workshopData,
     workshopWeeks: workshopWeeks,
-    activeGoals: activeGoals
+    activeGoals: activeGoals,
+    earnedBadges: earnedBadges,
+    readStreak: readStreak,
+    lastReadDate: lastReadDate
   };
   saveStudentData(currentStudentPin, data);
 }
@@ -1061,6 +1064,9 @@ function initApp(){
     workshopData = saved.workshopData||{};
     workshopWeeks = saved.workshopWeeks||[];
     activeGoals = saved.activeGoals||[];
+    earnedBadges = saved.earnedBadges||[];
+    readStreak = saved.readStreak||0;
+    lastReadDate = saved.lastReadDate||null;
     // Restore assignments - use saved dates directly, don't recalculate
     assignments = (saved.assignments||[]).map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
@@ -1110,7 +1116,7 @@ function initApp(){
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
-  setTimeout(function(){ updateSummary(); render(); }, 0);
+  setTimeout(function(){ updateSummary(); render(); checkBadges(); }, 0);
   initWorkshop();
   initGoals();
   setTimeout(function(){ showNotifications(); updateBell(); },800);
@@ -1129,7 +1135,7 @@ function toggle(id){
   if(a.done){ xp+=25; showToast(); localStorage.setItem('sp_last_activity_'+currentStudentPin, today.toISOString().slice(0,10)); } else { xp=Math.max(0,xp-25); }
   document.getElementById('xpVal').textContent=xp;
   document.getElementById('xpFill').style.width=Math.min(100,Math.round(xp/2.5))+'%';
-  updateSummary(); render(); updateBell(); saveCurrentData();
+  updateSummary(); render(); updateBell(); saveCurrentData(); checkBadges();
   if(document.getElementById('panel-goals').classList.contains('active')) renderGoals();
 }
 
@@ -1433,7 +1439,7 @@ function addPresetGoal(id){
   var preset=PRESET_GOALS.find(function(g){ return g.id===id; });
   if(!preset) return;
   activeGoals.push({id:id,icon:preset.icon,name:preset.name});
-  saveCurrentData(); renderGoals(); updateBell();
+  saveCurrentData(); renderGoals(); updateBell(); checkBadges();
 }
 
 function addCustomGoal(){ openWizard(); }
@@ -1774,7 +1780,7 @@ function saveSportsGoal(sport){
     sport: sport,
     sportProfile: {level: level, days: days, weaknesses: weakChips}
   });
-  saveCurrentData(); closeWizard(); renderGoals(); updateBell();
+  saveCurrentData(); closeWizard(); renderGoals(); updateBell(); checkBadges();
 }
 
 function wBack(step){ showWizardStep(step - 1); }
@@ -1811,7 +1817,7 @@ function saveWizardGoal(){
   // Restore save button onclick
   var btn = document.querySelector('.wizard-btn.primary');
   if(btn) btn.onclick = saveWizardGoal;
-  saveCurrentData(); closeWizard(); renderGoals(); updateBell();
+  saveCurrentData(); closeWizard(); renderGoals(); updateBell(); checkBadges();
 }
 
 function getSmartGoalMessages(goal){
