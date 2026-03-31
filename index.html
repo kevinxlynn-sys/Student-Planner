@@ -1101,18 +1101,7 @@ function initApp(){
       assignments.push({id:99,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false});
     }
 
-    // If it's Monday and a new week, reset all non-daily assignment due dates and done status
-    if(resetWeeklyAssignments){
-      assignments.forEach(function(a){
-        if(!a.daily){
-          // Roll due date to this week
-          var dueDay = a.due.getDay();
-          var newDue = getNextDay(getDayName(dueDay));
-          a.due = newDue;
-          a.done = false;
-        }
-      });
-    }
+    // Weekly reset removed — G loads fresh list each week via Workshop
   } else {
     // Fresh start - new accounts begin empty
     xp = 0;
@@ -1597,22 +1586,20 @@ function loadFromPastedText(){
     if(globalDate) defaultDue = globalDate;
   }
 
-  // WIPE all non-daily assignments — full replace, no merging
+  // NUCLEAR WIPE — remove ALL non-daily assignments, save immediately to localStorage
   assignments = assignments.filter(function(a){ return a.daily; });
-  saveCurrentData(); // immediately persist the wipe so old data can't come back
+  saveCurrentData(); // lock in the wipe to localStorage before adding new items
 
-  // Add new assignments parsed from lines
-  var nextId = Math.max.apply(null, assignments.map(function(a){ return a.id||0; }).concat([99])) + 1;
+  // Small delay to ensure save completes, then add new items
+  var newItems = [];
+  var nextId = 100 + Date.now() % 100000; // guaranteed unique IDs
   var added = 0;
   lines.forEach(function(line){
-    // Skip if it's just "READ" daily — already handled
     if(/^\s*read\s*$/i.test(line)) return;
-
     var due = parseDueDate(line) || new Date(defaultDue);
     due.setHours(0,0,0,0);
     var subject = parseSubject(line);
-
-    assignments.push({
+    newItems.push({
       id: nextId++,
       title: line,
       subject: subject,
@@ -1624,6 +1611,17 @@ function loadFromPastedText(){
     });
     added++;
   });
+
+  // Re-read from localStorage to get the wiped state, then add new items on top
+  var freshSaved = getStudentData(currentStudentPin);
+  var dailyOnly = freshSaved && freshSaved.assignments
+    ? freshSaved.assignments.filter(function(a){ return a.daily; })
+    : [];
+  // Rebuild assignments from scratch: daily items + new workshop items
+  assignments = dailyOnly.map(function(a){
+    return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
+  });
+  newItems.forEach(function(item){ assignments.push(item); });
 
   // Also keep workshop tab updated
   var weekLabel = getWeekLabel(today);
