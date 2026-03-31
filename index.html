@@ -550,7 +550,7 @@ var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
 var filter = 'all';
 var today, friday, monday, tuesday;
 var xp = 0, assignments = [], activeGoals = [];
-var workshopData = {}, workshopWeeks = [];
+var workshopData = {}, workshopWeeks = [], workshopNextId = 1, currentWorkshopWeek = '';
 var currentStudentPin = '', currentStudentName = '', isAdmin = false;
 var notifTimer = null, resetWeeklyAssignments = false;
 
@@ -772,14 +772,14 @@ async function addStudent(){
 }
 
 function resetStudentDates(pin){
-  if(!confirm('Reset dates for this student? XP and completed items will be kept.')) return;
   var data = getStudentData(pin);
-  if(!data){ alert('No data found for this student.'); return; }
+  if(!data){ return; }
   var t = new Date(); t.setHours(0,0,0,0);
-  function getThisWeekDay(dayNum){
+  function getActualWeekDay(dayNum){
+    // Find the most recent occurrence of this day of week — past or today, never future
     var d = new Date(t);
     var diff = dayNum - d.getDay();
-    // Allow negative diff so past days show as overdue
+    if(diff > 0) diff -= 7; // always go backwards to keep past dates past
     d.setDate(d.getDate() + diff);
     return d.toISOString().slice(0,10);
   }
@@ -787,13 +787,19 @@ function resetStudentDates(pin){
     data.assignments.forEach(function(a){
       if(!a.daily){
         var due = new Date(a.dueStr + 'T00:00:00');
-        a.dueStr = getThisWeekDay(due.getDay());
+        a.dueStr = getActualWeekDay(due.getDay());
         a.done = false;
       }
     });
   }
   saveStudentData(pin, data);
-  alert('Done! Tell the student to refresh the app.');
+  // Show inline confirmation
+  var list = document.getElementById('studentsList');
+  var banner = document.createElement('div');
+  banner.style.cssText = 'background:#0d2a1a;border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#34d399;font-family:Orbitron,monospace;letter-spacing:.5px';
+  banner.textContent = 'Dates reset! Student should refresh the app.';
+  list.parentNode.insertBefore(banner, list);
+  setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 3000);
 }
 
 async function deleteStudent(p){
@@ -1067,10 +1073,21 @@ function initApp(){
     earnedBadges = saved.earnedBadges||[];
     readStreak = saved.readStreak||0;
     lastReadDate = saved.lastReadDate||null;
-    // Restore assignments - use saved dates directly, don't recalculate
+    // Restore assignments - use saved dates, but auto-correct if they're in the future when they should be past
     assignments = (saved.assignments||[]).map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
       var due = new Date(a.dueStr+'T00:00:00');
+      // If the saved date is MORE than 6 days in the future, it was likely miscalculated — 
+      // correct it to the most recent past occurrence of that day of week
+      var dayDiff = Math.round((due - today) / 86400000);
+      if(dayDiff > 6){
+        var corrected = new Date(today);
+        var targetDay = due.getDay();
+        var diff = targetDay - today.getDay();
+        if(diff >= 0) diff -= 7; // always go to past
+        corrected.setDate(today.getDate() + diff);
+        due = corrected;
+      }
       return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false};
     });
     // Reset READ for today
@@ -1097,19 +1114,11 @@ function initApp(){
       });
     }
   } else {
-    // Fresh start with default assignments
+    // Fresh start - new accounts begin empty
     xp = 0;
     workshopData = {}; workshopWeeks = [];
+    activeGoals = []; earnedBadges = []; readStreak = 0; lastReadDate = null;
     assignments = [
-      {id:1,title:'Cells Project',subject:'Science',due:new Date(getNextDay('Friday')),priority:'high',daily:false,done:false},
-      {id:2,title:'Science Camp Reflection',subject:'Science',due:new Date(getNextDay('Monday')),priority:'high',daily:false,done:false},
-      {id:3,title:'Greek/Latin Roots Work',subject:'ELA',due:new Date(getNextDay('Friday')),priority:'medium',daily:false,done:false},
-      {id:4,title:'ALWTW - Chapter Check Ins (Ch. 3-9)',subject:'ELA',due:new Date(getNextDay('Friday')),priority:'medium',daily:false,done:false},
-      {id:5,title:'Math Challenge - Wayground',subject:'Math',due:new Date(getNextDay('Friday')),priority:'medium',daily:false,done:false},
-      {id:6,title:'3-2-1 Non-fiction Reading Response (p.336-341)',subject:'ELA',due:new Date(getNextDay('Friday')),priority:'medium',daily:false,done:false},
-      {id:7,title:'Social Studies World Religions Article',subject:'Social Studies',due:new Date(getNextDay('Tuesday')),priority:'high',daily:false,done:false},
-      {id:8,title:'Practice Words for Walk Through',subject:'ELA',due:new Date(getNextDay('Friday')),priority:'low',daily:false,done:false},
-      {id:9,title:'Write More Ideas for Non-fiction Article (Writers Notebook)',subject:'ELA',due:new Date(getNextDay('Friday')),priority:'low',daily:false,done:false},
       {id:10,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false}
     ];
   }
@@ -1495,8 +1504,13 @@ function initWorkshop(){
   if(!workshopData[weekLabel]){ workshopData[weekLabel]=[]; }
   if(workshopWeeks.indexOf(weekLabel)===-1) workshopWeeks.unshift(weekLabel);
   currentWorkshopWeek=weekLabel;
+  // Set workshopNextId to max existing id + 1 to avoid collisions
+  var maxId=0;
+  Object.keys(workshopData).forEach(function(wk){
+    (workshopData[wk]||[]).forEach(function(item){ if(item.id>maxId) maxId=item.id; });
+  });
+  workshopNextId=maxId+1;
   renderWorkshopTabs(); renderWorkshopItems();
-
 }
 function loadFromPastedText(){
   var text = document.getElementById('workshopPasteArea').value.trim();
@@ -1556,7 +1570,7 @@ function toggleWorkshop(week,id){
 }
 function delWorkshopItem(week,id){ if(workshopData[week]) workshopData[week]=workshopData[week].filter(function(i){ return i.id!==id; }); renderWorkshopItems(); saveCurrentData(); }
 function addWorkshopItem(){ var val=document.getElementById('workshopManualInput').value.trim(); if(!val)return; if(!workshopData[currentWorkshopWeek])workshopData[currentWorkshopWeek]=[]; workshopData[currentWorkshopWeek].push({id:workshopNextId++,text:val,done:false}); document.getElementById('workshopManualInput').value=''; renderWorkshopItems(); saveCurrentData(); }
-function clearCurrentWeek(){ if(confirm('Clear all items for '+currentWorkshopWeek+'?')){ workshopData[currentWorkshopWeek]=[]; renderWorkshopItems(); saveCurrentData(); } }
+function clearCurrentWeek(){ workshopData[currentWorkshopWeek]=[]; renderWorkshopItems(); saveCurrentData(); }
 
 var wizardData = {goalText:'',grade:'6',strong:[],weak:[],gpa:'3.5'};
 var COLLEGE_KEYWORDS = ['stanford','harvard','yale','mit','college','university','medical','doctor','lawyer','engineer','scholarship','pre-med','pre-law'];
