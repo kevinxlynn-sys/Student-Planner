@@ -1517,16 +1517,17 @@ function loadFromPastedText(){
   if(!text){ document.getElementById('gdocStatus').textContent='Please paste some text first!'; return; }
   
   var lines = text.split('\n')
-    .map(function(l){ return l.replace(/^\d+\.\s*/, '').replace(/^-+$/, '').replace(/^\s*[-•]\s*/, '').trim(); })
+    .map(function(l){ return l.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '').trim(); })
     .filter(function(l){
-      return l.length > 2
-        && l.indexOf('Report abuse') === -1
-        && l.indexOf('Published using') === -1
-        && l.indexOf('Updated automatically') === -1
-        && l.indexOf('Learn more') === -1
-        && l.indexOf('Workshop List') === -1
-        && l.indexOf('docs.google.com') === -1
-        && l.indexOf('All work due') === -1;
+      if(l.length < 2) return false;
+      var low = l.toLowerCase();
+      return low.indexOf('report abuse') === -1
+        && low.indexOf('published using') === -1
+        && low.indexOf('updated automatically') === -1
+        && low.indexOf('learn more') === -1
+        && low.indexOf('docs.google.com') === -1
+        && low.indexOf('all work due') === -1
+        && !/^-+$/.test(l);
     });
 
   if(!lines.length){
@@ -1547,7 +1548,13 @@ function loadFromPastedText(){
 }
 
 
-function renderWorkshopTabs(){ var tabs=document.getElementById('workshopWeekTabs'); if(workshopWeeks.length<=1){tabs.innerHTML='';return;} tabs.innerHTML=workshopWeeks.map(function(w){ return '<button class="wk-tab'+(w===currentWorkshopWeek?' active':'')+'" onclick="switchWorkshopWeek(\''+w+'\')">'+w+'</button>'; }).join(''); }
+function renderWorkshopTabs(){
+  var tabs=document.getElementById('workshopWeekTabs');
+  if(!workshopWeeks.length){tabs.innerHTML='';return;}
+  tabs.innerHTML=workshopWeeks.map(function(w){
+    return '<button class="wk-tab'+(w===currentWorkshopWeek?' active':'')+'" onclick="switchWorkshopWeek(\''+w+'\')">'+w+'</button>';
+  }).join('');
+}
 function switchWorkshopWeek(w){ currentWorkshopWeek=w; renderWorkshopTabs(); renderWorkshopItems(); }
 function renderWorkshopItems(){
   var items=workshopData[currentWorkshopWeek]||[];
