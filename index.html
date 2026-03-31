@@ -993,7 +993,7 @@ function saveCurrentData(){
   var data = {
     xp: xp,
     assignments: assignments.map(function(a){
-      return {id:a.id,title:a.title,subject:a.subject,dueStr:a.due.toISOString().slice(0,10),priority:a.priority,daily:a.daily,done:a.done};
+      return {id:a.id,title:a.title,subject:a.subject,dueStr:a.due.toISOString().slice(0,10),priority:a.priority,daily:a.daily,done:a.done,workshopImport:a.workshopImport||false};
     }),
     workshopData: workshopData,
     workshopWeeks: workshopWeeks,
@@ -1088,7 +1088,7 @@ function initApp(){
         corrected.setDate(today.getDate() + diff);
         due = corrected;
       }
-      return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false};
+      return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false,workshopImport:a.workshopImport||false};
     });
     // Reset READ for today
     var readItem = assignments.find(function(a){ return a.daily; });
@@ -1512,10 +1512,59 @@ function initWorkshop(){
   workshopNextId=maxId+1;
   renderWorkshopTabs(); renderWorkshopItems();
 }
+function parseDueDate(text){
+  var lower = text.toLowerCase();
+  var t = new Date(today);
+
+  if(/\bdue\s+today\b|\btoday\b/.test(lower)) return new Date(t);
+  if(/\bdue\s+tomorrow\b|\btomorrow\b/.test(lower)){ var tm=new Date(t); tm.setDate(t.getDate()+1); return tm; }
+
+  // Day names
+  var days=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  for(var di=0;di<days.length;di++){
+    if(lower.indexOf(days[di])>-1){
+      var d=new Date(today);
+      var diff=di-d.getDay();
+      if(diff<0) diff+=7; // already past this week — go to next occurrence
+      // diff===0 means today — keep as today (don't push to next week)
+      d.setDate(d.getDate()+diff);
+      return d;
+    }
+  }
+
+  // Month + day: "April 15th", "Apr 20", etc. — number must immediately follow month
+  var months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  for(var mi=0;mi<months.length;mi++){
+    // Match month name followed closely by a 1-2 digit day number (1-31)
+    var rx=new RegExp('\\b'+months[mi]+'\\w*[\\s.,-]*([0-3]?[0-9])(?:st|nd|rd|th)?\\b','i');
+    var m=lower.match(rx);
+    if(m){
+      var day=parseInt(m[1]);
+      if(day>=1&&day<=31){
+        var yr=today.getFullYear();
+        var candidate=new Date(yr,mi,day);
+        if(candidate<today) candidate.setFullYear(yr+1);
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
+function parseSubject(text){
+  var lower = text.toLowerCase();
+  if(/math|wayground|challenge|equation|algebra|geometry/.test(lower)) return 'Math';
+  if(/science|cells|biology|lab|camp/.test(lower)) return 'Science';
+  if(/social\s*stud|history|geography|world\s*religion|gc\b/.test(lower)) return 'Social Studies';
+  if(/ela|read|book|chapter|story|stories|fiction|article|narrative|writing|notebook|walk\s*through|roots|alwtw/.test(lower)) return 'ELA';
+  return 'Other';
+}
+
 function loadFromPastedText(){
   var text = document.getElementById('workshopPasteArea').value.trim();
   if(!text){ document.getElementById('gdocStatus').textContent='Please paste some text first!'; return; }
-  
+
   var lines = text.split('\n')
     .map(function(l){ return l.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '').trim(); })
     .filter(function(l){
@@ -1536,14 +1585,58 @@ function loadFromPastedText(){
     return;
   }
 
+  // Check for "all work due X" line to use as default date
+  var defaultDue = new Date(today);
+  var daysToFri = (5 - today.getDay() + 7) % 7 || 7;
+  defaultDue.setDate(today.getDate() + daysToFri);
+
+  // Look for a global due date in the raw text
+  var allDueMatch = text.toLowerCase().match(/all\s+work\s+due\s+(\w+)/);
+  if(allDueMatch){
+    var globalDate = parseDueDate('due ' + allDueMatch[1]);
+    if(globalDate) defaultDue = globalDate;
+  }
+
+  // WIPE all non-daily assignments — full replace, no merging
+  assignments = assignments.filter(function(a){ return a.daily; });
+  saveCurrentData(); // immediately persist the wipe so old data can't come back
+
+  // Add new assignments parsed from lines
+  var nextId = Math.max.apply(null, assignments.map(function(a){ return a.id||0; }).concat([99])) + 1;
+  var added = 0;
+  lines.forEach(function(line){
+    // Skip if it's just "READ" daily — already handled
+    if(/^\s*read\s*$/i.test(line)) return;
+
+    var due = parseDueDate(line) || new Date(defaultDue);
+    due.setHours(0,0,0,0);
+    var subject = parseSubject(line);
+
+    assignments.push({
+      id: nextId++,
+      title: line,
+      subject: subject,
+      due: due,
+      priority: 'medium',
+      daily: false,
+      done: false,
+      workshopImport: true
+    });
+    added++;
+  });
+
+  // Also keep workshop tab updated
   var weekLabel = getWeekLabel(today);
   workshopData[weekLabel] = lines.map(function(line){ return {id:workshopNextId++, text:line, done:false}; });
   if(workshopWeeks.indexOf(weekLabel)===-1) workshopWeeks.unshift(weekLabel);
   currentWorkshopWeek = weekLabel;
   document.getElementById('currentWeekLabel').textContent = weekLabel;
-  document.getElementById('gdocStatus').textContent = lines.length + ' items loaded!';
-  document.getElementById('gdocStatus').style.color = 'var(--green)';
+
+  document.getElementById('gdocStatus').textContent = added + ' items added to Assignments!';
+  document.getElementById('gdocStatus').style.color='var(--green)';
   document.getElementById('workshopPasteArea').value = '';
+
+  updateSummary(); render();
   renderWorkshopTabs(); renderWorkshopItems(); saveCurrentData();
 }
 
