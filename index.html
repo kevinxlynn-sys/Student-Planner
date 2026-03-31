@@ -1073,14 +1073,16 @@ function initApp(){
     earnedBadges = saved.earnedBadges||[];
     readStreak = saved.readStreak||0;
     lastReadDate = saved.lastReadDate||null;
-    // Restore assignments - use saved dates, but auto-correct if they're in the future when they should be past
+    // Restore assignments - use saved dates, but auto-correct near-future dates
+    // that were likely miscalculated by day-of-week logic (within next 7 days = wrong)
     assignments = (saved.assignments||[]).map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
       var due = new Date(a.dueStr+'T00:00:00');
-      // If the saved date is MORE than 6 days in the future, it was likely miscalculated — 
-      // correct it to the most recent past occurrence of that day of week
       var dayDiff = Math.round((due - today) / 86400000);
-      if(dayDiff > 6){
+      // If the date is in the future AND it's a workshop-imported item without a specific far-future date,
+      // correct it to the most recent past occurrence of that day of week
+      // Only auto-correct if NOT a workshopImport (those have real parsed dates we want to keep)
+      if(dayDiff > 0 && !a.workshopImport){
         var corrected = new Date(today);
         var targetDay = due.getDay();
         var diff = targetDay - today.getDay();
