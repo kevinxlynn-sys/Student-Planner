@@ -551,6 +551,7 @@ var filter = 'all';
 var today, friday, monday, tuesday;
 var xp = 0, assignments = [], activeGoals = [];
 var workshopData = {}, workshopWeeks = [], workshopNextId = 1, currentWorkshopWeek = '';
+var nextAssignId = 200;
 var currentStudentPin = '', currentStudentName = '', isAdmin = false;
 var notifTimer = null, resetWeeklyAssignments = false;
 
@@ -788,7 +789,24 @@ function resetStudentDates(pin){
 }
 
 async function deleteStudent(p){
-  if(!confirm('Delete this student and all their data?')) return;
+  var students = getStudents();
+  var student = students.find(function(s){ return s.pin===p; });
+  var name = student ? student.name : 'this student';
+  var old = document.getElementById('delConfirmBanner');
+  if(old) old.parentNode.removeChild(old);
+  var banner = document.createElement('div');
+  banner.id = 'delConfirmBanner';
+  banner.style.cssText = 'background:#2d1a1a;border:1px solid var(--red);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+  banner.innerHTML = '<span style="flex:1;font-size:12px;color:#f87171">Delete <b>'+name+'</b> and all their data?</span>'
+    +'<button onclick="confirmDeleteStudent(\''+p+'\')" style="background:var(--red);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-family:Orbitron,monospace;font-size:10px;cursor:pointer">YES, DELETE</button>'
+    +'<button onclick="document.getElementById(\'delConfirmBanner\').remove()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;font-family:Orbitron,monospace;font-size:10px;cursor:pointer">CANCEL</button>';
+  var list = document.getElementById('studentsList');
+  list.parentNode.insertBefore(banner, list);
+}
+
+async function confirmDeleteStudent(p){
+  var banner = document.getElementById('delConfirmBanner');
+  if(banner) banner.remove();
   try { await sb('students','DELETE',null,'?pin=eq.'+p); } catch(e){ console.log('DB delete failed'); }
   var students = getStudents().filter(function(s){ return s.pin!==p; });
   saveStudents(students);
@@ -839,6 +857,12 @@ function checkBadges(){
   if(readStreak>=30&&!hasBadge('read30')) newBadges.push('read30');
   var nd=assignments&&assignments.filter(function(a){return !a.daily;});
   if(nd&&nd.length>0&&nd.every(function(a){return a.done;})&&!hasBadge('perfect_week')) newBadges.push('perfect_week');
+  // Workshop Pro — awarded when a workshop list is fully completed
+  var wItems=workshopData[currentWorkshopWeek]||[];
+  if(wItems.length>0&&wItems.every(function(i){return i.done;})&&!hasBadge('workshop1')) newBadges.push('workshop1');
+  // On Point — no overdue assignments
+  var hasOverdue=assignments.some(function(a){return !a.done&&!a.daily&&a.due<today;});
+  if(!hasOverdue&&nd&&nd.length>0&&!hasBadge('ontime7')) newBadges.push('ontime7');
   newBadges.forEach(function(id){
     earnedBadges.push({id:id,earnedOn:todayStr});
     var def=BADGE_DEFS.find(function(b){return b.id===id;});
@@ -1084,6 +1108,11 @@ function initApp(){
       {id:10,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false}
     ];
   }
+
+  // Set nextAssignId to max existing id + 1
+  var maxAid = 0;
+  assignments.forEach(function(a){ if((a.id||0) > maxAid) maxAid = a.id; });
+  nextAssignId = maxAid + 1;
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
