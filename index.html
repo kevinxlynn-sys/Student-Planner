@@ -774,32 +774,17 @@ async function addStudent(){
 function resetStudentDates(pin){
   var data = getStudentData(pin);
   if(!data){ return; }
-  var t = new Date(); t.setHours(0,0,0,0);
-  function getActualWeekDay(dayNum){
-    // Find the most recent occurrence of this day of week — past or today, never future
-    var d = new Date(t);
-    var diff = dayNum - d.getDay();
-    if(diff > 0) diff -= 7; // always go backwards to keep past dates past
-    d.setDate(d.getDate() + diff);
-    return d.toISOString().slice(0,10);
-  }
+  // Wipe ALL non-daily assignments — student should reload their list fresh
   if(data.assignments){
-    data.assignments.forEach(function(a){
-      if(!a.daily){
-        var due = new Date(a.dueStr + 'T00:00:00');
-        a.dueStr = getActualWeekDay(due.getDay());
-        a.done = false;
-      }
-    });
+    data.assignments = data.assignments.filter(function(a){ return a.daily; });
   }
   saveStudentData(pin, data);
-  // Show inline confirmation
   var list = document.getElementById('studentsList');
   var banner = document.createElement('div');
   banner.style.cssText = 'background:#0d2a1a;border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#34d399;font-family:Orbitron,monospace;letter-spacing:.5px';
-  banner.textContent = 'Dates reset! Student should refresh the app.';
+  banner.textContent = 'Done! Tell G-Lynn to refresh and reload his workshop list.';
   list.parentNode.insertBefore(banner, list);
-  setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 3000);
+  setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 4000);
 }
 
 async function deleteStudent(p){
@@ -1073,23 +1058,9 @@ function initApp(){
     earnedBadges = saved.earnedBadges||[];
     readStreak = saved.readStreak||0;
     lastReadDate = saved.lastReadDate||null;
-    // Restore assignments - use saved dates, but auto-correct near-future dates
-    // that were likely miscalculated by day-of-week logic (within next 7 days = wrong)
     assignments = (saved.assignments||[]).map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
       var due = new Date(a.dueStr+'T00:00:00');
-      var dayDiff = Math.round((due - today) / 86400000);
-      // If the date is in the future AND it's a workshop-imported item without a specific far-future date,
-      // correct it to the most recent past occurrence of that day of week
-      // Only auto-correct if NOT a workshopImport (those have real parsed dates we want to keep)
-      if(dayDiff > 0 && !a.workshopImport){
-        var corrected = new Date(today);
-        var targetDay = due.getDay();
-        var diff = targetDay - today.getDay();
-        if(diff >= 0) diff -= 7; // always go to past
-        corrected.setDate(today.getDate() + diff);
-        due = corrected;
-      }
       return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false,workshopImport:a.workshopImport||false};
     });
     // Reset READ for today
