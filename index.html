@@ -517,28 +517,6 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
     <div id="plannerContainer"></div>
   </div>
 
-  <!-- FLOATING AI CHAT WIDGET -->
-  <div id="aiWidget">
-    <div id="aiChatBox" class="collapsed">
-      <div class="ai-chat-header" onclick="aiToggle()">
-        <div class="ai-chat-status"></div>
-        <div class="ai-chat-title">AI HELPER</div>
-        <div class="ai-toggle-icon" id="aiToggleIcon">▲</div>
-      </div>
-      <div class="ai-messages" id="aiMessages" style="display:none">
-        <div class="ai-msg bot">Hey G-Lynn! 👋 Ask me anything about your homework — I can explain concepts, help you prioritize, or check your thinking!</div>
-        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
-          <button class="ai-suggestion" onclick="aiSuggest('What should I work on first?')">🎯 What should I work on first?</button>
-          <button class="ai-suggestion" onclick="aiSuggest('How am I doing overall?')">📊 How am I doing?</button>
-        </div>
-      </div>
-      <div class="ai-input-row" id="aiInputRow" style="display:none">
-        <textarea class="ai-input" id="aiInput" placeholder="Ask anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}"></textarea>
-        <button class="ai-send" id="aiSendBtn" onclick="aiSend()">➤</button>
-      </div>
-    </div>
-  </div>
-
   <div id="panel-badges" class="panel">
     <div style="font-size:13px;color:var(--accent);font-weight:bold;letter-spacing:1px;margin-bottom:16px">YOUR BADGES</div>
     <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
@@ -762,18 +740,15 @@ function signOut(){
 var aiExpanded = false;
 function aiToggle(){
   aiExpanded = !aiExpanded;
-  var box = document.getElementById('aiChatBox');
   var msgs = document.getElementById('aiMessages');
   var inputRow = document.getElementById('aiInputRow');
   var icon = document.getElementById('aiToggleIcon');
   if(aiExpanded){
-    box.className = 'expanded';
     msgs.style.display = 'flex';
     inputRow.style.display = 'flex';
     icon.textContent = '▼';
     msgs.scrollTop = msgs.scrollHeight;
   } else {
-    box.className = 'collapsed';
     msgs.style.display = 'none';
     inputRow.style.display = 'none';
     icon.textContent = '▲';
@@ -787,7 +762,7 @@ function showTab(name,btn){
   btn.classList.add('active');
   // Show AI widget only on assignments tab
   var widget = document.getElementById('aiWidget');
-  if(widget) widget.className = name==='planner' ? 'visible' : '';
+  if(widget) widget.style.display = name==='planner' ? 'flex' : 'none';
   if(name==='goals') renderGoals();
   if(name==='badges') renderBadges();
 }
@@ -1193,7 +1168,7 @@ function initApp(){
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
-  setTimeout(function(){ updateSummary(); render(); var w=document.getElementById('aiWidget'); if(w) w.className='visible'; }, 0);
+  setTimeout(function(){ updateSummary(); render(); var w=document.getElementById('aiWidget'); if(w) w.style.display='flex'; }, 0);
   initWorkshop();
   initGoals();
   setTimeout(function(){ showNotifications(); updateBell(); },800);
@@ -2253,5 +2228,26 @@ async function aiSend(){
   input.focus();
 }
 
+<!-- FLOATING AI WIDGET — outside appScreen so position:fixed works correctly -->
+<div id="aiWidget" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9999;flex-direction:column;align-items:flex-start">
+  <div id="aiChatBox" style="width:280px;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden">
+    <div class="ai-chat-header" onclick="aiToggle()" style="cursor:pointer">
+      <div class="ai-chat-status"></div>
+      <div class="ai-chat-title">AI HELPER</div>
+      <div id="aiToggleIcon" style="font-size:12px;color:var(--text2)">▲</div>
+    </div>
+    <div class="ai-messages" id="aiMessages" style="display:none;max-height:280px">
+      <div class="ai-msg bot">Hey G-Lynn! 👋 Ask me anything about your homework — I can explain concepts, help you prioritize, or check your thinking!</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+        <button class="ai-suggestion" onclick="aiSuggest('What should I work on first?')">🎯 What should I work on first?</button>
+        <button class="ai-suggestion" onclick="aiSuggest('How am I doing overall?')">📊 How am I doing?</button>
+      </div>
+    </div>
+    <div id="aiInputRow" style="padding:8px;border-top:1px solid var(--border);display:none;gap:5px;align-items:center">
+      <textarea class="ai-input" id="aiInput" placeholder="Ask anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}"></textarea>
+      <button class="ai-send" id="aiSendBtn" onclick="aiSend()">➤</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
