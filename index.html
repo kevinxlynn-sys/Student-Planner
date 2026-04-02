@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://openrouter.ai https://api.groq.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="application-name" content="Student Planner"/>
 <meta name="apple-mobile-web-app-title" content="Student Planner"/>
@@ -2237,36 +2238,37 @@ async function aiSend(){
   document.getElementById('aiMessages').scrollTop = document.getElementById('aiMessages').scrollHeight;
 
   try {
-    var messages = [{role:'user', content: aiGetContext() + '\n\n---\nNow here is the conversation:\n\n' + text}];
-    if(aiHistory.length > 2){
-      // Include recent history for context
-      messages = [{role:'user', content: aiGetContext()}];
-      for(var i = Math.max(0, aiHistory.length-8); i < aiHistory.length; i++){
-        messages.push(aiHistory[i]);
-      }
-    }
-
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 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',
+        'HTTP-Referer': 'https://mach1planner.vercel.app',
+        'X-Title': 'MACH 1 Planner'
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'meta-llama/llama-3-70b-instruct',
         max_tokens: 1000,
-        system: aiGetContext(),
-        messages: aiHistory.slice(-10)
+        messages: [{role:'system', content: aiGetContext()}].concat(aiHistory.slice(-10))
       })
     });
 
     var data = await res.json();
     thinkDiv.remove();
 
-    var reply = (data.content && data.content[0] && data.content[0].text) || 'Sorry, I had trouble responding. Try again!';
+    if(!res.ok){
+      aiAddMsg('API error ' + res.status + ': ' + (data.error && data.error.message || JSON.stringify(data)), 'bot');
+      document.getElementById('aiSendBtn').disabled = false;
+      return;
+    }
+
+    var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'Sorry, I had trouble responding. Try again!';
     aiAddMsg(reply, 'bot');
     aiHistory.push({role:'assistant', content:reply});
 
   } catch(e) {
     thinkDiv.remove();
-    aiAddMsg('Oops, something went wrong. Check your connection and try again!', 'bot');
+    aiAddMsg('Error: ' + e.message, 'bot');
     console.error('AI error:', e);
   }
 
