@@ -2069,8 +2069,8 @@ function aiGetContext(){
     + 'You are talking to ' + (currentStudentName||'G-Lynn') + ', a 6th grade student. '
     + 'Keep responses SHORT and direct — 2 to 4 sentences max unless a step-by-step solution is needed. No fluff, no long intros. Get straight to the point. '
     + 'You help with ALL subjects: math, science, ELA, social studies, reading, writing, and anything else. For math, show steps concisely. For writing, give quick actionable tips. Never just do the homework for them — guide and explain instead. '
-    + 'You can also ADD assignments to the planner. If the student asks you to add an assignment, respond ONLY with a JSON object in this exact format (no other text): '
-    + '{"action":"add","title":"assignment title","subject":"Math","due":"YYYY-MM-DD"} '
+    + 'You can also ADD or REMOVE assignments. If asked to add, respond ONLY with: {"action":"add","title":"assignment title","subject":"Math","due":"YYYY-MM-DD"} '
+    + 'If asked to remove or delete an assignment, respond ONLY with: {"action":"remove","title":"assignment title"} — match the title as closely as possible from the list below. '
     + 'Valid subjects: Math, Science, ELA, Social Studies, History, Reading, Writing, Art, PE, Other. '
     + 'For the due date, use today\'s date if not specified: ' + today.toISOString().split('T')[0] + '. '
     + 'If the student says "tomorrow", use: ' + new Date(today.getTime()+86400000).toISOString().split('T')[0] + '. '
@@ -2151,7 +2151,21 @@ async function aiSend(){
             input.focus();
             return;
           }
-        }
+          if(action.action === 'remove' && action.title){
+            var search = action.title.toLowerCase();
+            var match = assignments.find(function(a){ return a.title.toLowerCase().includes(search) || search.includes(a.title.toLowerCase().substring(0,8)); });
+            if(match){
+              assignments = assignments.filter(function(a){ return a.id !== match.id; });
+              updateSummary(); render(); saveCurrentData();
+              aiAddMsg('🗑️ Removed "' + match.title + '" from your planner!', 'bot');
+            } else {
+              aiAddMsg('❌ Couldn\'t find "' + action.title + '" — check the assignment name and try again.', 'bot');
+            }
+            aiHistory.push({role:'assistant', content:reply});
+            document.getElementById('aiSendBtn').disabled = false;
+            input.focus();
+            return;
+          }        }
       } catch(e){ /* not JSON, treat as normal reply */ }
       aiAddMsg(reply, 'bot');
       aiHistory.push({role:'assistant', content:reply});
