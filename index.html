@@ -777,6 +777,7 @@ function aiToggle(){
   var msgs = document.getElementById('aiMessages');
   var inputRow = document.getElementById('aiInputRow');
   var icon = document.getElementById('aiToggleIcon');
+  if(!msgs || !inputRow || !icon) return;
   if(aiExpanded){
     msgs.style.display = 'flex';
     inputRow.style.display = 'flex';
@@ -794,7 +795,6 @@ function showTab(name,btn){
   document.querySelectorAll('.main-tab').forEach(function(b){b.classList.remove('active');});
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
-  // Show AI widget only on assignments tab
   if(name==='goals') renderGoals();
   if(name==='badges') renderBadges();
 }
@@ -1240,10 +1240,11 @@ function addAssignment(){
 }
 
 function updateSummary(){
-  var doneCount=assignments.filter(function(a){ return a.done; }).length;
-  document.getElementById('sumTotal').textContent=assignments.length;
-  document.getElementById('sumDone').textContent=doneCount;
-  document.getElementById('sumLeft').textContent=assignments.length-doneCount;
+  var regular = assignments.filter(function(a){ return !a.daily; });
+  var doneCount = regular.filter(function(a){ return a.done; }).length;
+  document.getElementById('sumTotal').textContent = regular.length;
+  document.getElementById('sumDone').textContent = doneCount;
+  document.getElementById('sumLeft').textContent = regular.length - doneCount;
 }
 
 function setFilter(f,btn){ filter=f; document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); render(); }
@@ -2152,8 +2153,11 @@ async function aiSend(){
             return;
           }
           if(action.action === 'remove' && action.title){
-            var search = action.title.toLowerCase();
-            var match = assignments.find(function(a){ return a.title.toLowerCase().includes(search) || search.includes(a.title.toLowerCase().substring(0,8)); });
+            var search = action.title.toLowerCase().trim();
+            // Try exact match first, then starts-with, then includes
+            var match = assignments.find(function(a){ return a.title.toLowerCase() === search; })
+              || assignments.find(function(a){ return a.title.toLowerCase().startsWith(search.substring(0,12)); })
+              || assignments.find(function(a){ return !a.daily && a.title.toLowerCase().includes(search.substring(0,10)); });
             if(match){
               assignments = assignments.filter(function(a){ return a.id !== match.id; });
               updateSummary(); render(); saveCurrentData();
