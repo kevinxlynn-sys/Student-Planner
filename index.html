@@ -2117,17 +2117,10 @@ async function aiSend(){
   var msgs = document.getElementById('aiMessages');
   if(msgs){ msgs.appendChild(thinkDiv); msgs.scrollTop = msgs.scrollHeight; }
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': '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',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
         system: aiGetContext(),
         messages: aiHistory.slice(-10)
       })
@@ -2137,7 +2130,7 @@ async function aiSend(){
     if(!res.ok){
       aiAddMsg('⚠️ AI error: ' + (data.error&&data.error.message||JSON.stringify(data)), 'bot');
     } else {
-      var reply = (data.content&&data.content[0]&&data.content[0].text) || 'Sorry, I had trouble responding. Try again!';
+      var reply = data.reply || 'Sorry, I had trouble responding. Try again!';
       aiAddMsg(reply, 'bot');
       aiHistory.push({role:'assistant', content:reply});
     }
