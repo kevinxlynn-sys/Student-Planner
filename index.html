@@ -2116,50 +2116,35 @@ async function aiSend(){
   thinkDiv.textContent = '...';
   var msgs = document.getElementById('aiMessages');
   if(msgs){ msgs.appendChild(thinkDiv); msgs.scrollTop = msgs.scrollHeight; }
-  var models = [
-    'mistralai/mistral-7b-instruct:free',
-    'meta-llama/llama-3.2-3b-instruct:free',
-    'google/gemma-3-1b-it:free'
-  ];
-  var lastErr = '';
-  var replied = false;
-  for(var mi=0; mi<models.length && !replied; mi++){
-    try {
-      console.log('AI: trying model', models[mi]);
-      var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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',
-          'HTTP-Referer': 'https://mach1planner.vercel.app',
-          'X-Title': 'MACH 1 Planner'
-        },
-        body: JSON.stringify({
-          model: models[mi],
-          max_tokens: 1000,
-          messages: [{role:'system', content: aiGetContext()}].concat(aiHistory.slice(-10))
-        })
-      });
-      var data = await res.json();
-      if(!res.ok){
-        lastErr = 'HTTP '+res.status+': '+(data.error&&data.error.message||JSON.stringify(data));
-        console.warn('AI model failed:', models[mi], lastErr);
-        continue;
-      }
-      var reply = (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'';
-      if(!reply){ lastErr='Empty response'; continue; }
-      thinkDiv.remove();
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': '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',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        system: aiGetContext(),
+        messages: aiHistory.slice(-10)
+      })
+    });
+    var data = await res.json();
+    thinkDiv.remove();
+    if(!res.ok){
+      aiAddMsg('⚠️ AI error: ' + (data.error&&data.error.message||JSON.stringify(data)), 'bot');
+    } else {
+      var reply = (data.content&&data.content[0]&&data.content[0].text) || 'Sorry, I had trouble responding. Try again!';
       aiAddMsg(reply, 'bot');
       aiHistory.push({role:'assistant', content:reply});
-      replied = true;
-    } catch(e) {
-      lastErr = e.message;
-      console.error('AI fetch error (model '+models[mi]+'):', e);
     }
-  }
-  if(!replied){
+  } catch(e) {
     thinkDiv.remove();
-    aiAddMsg('⚠️ Couldn\'t reach the AI right now. Check your internet connection or try again in a moment. ('+lastErr+')', 'bot');
+    aiAddMsg('⚠️ Error: ' + e.message, 'bot');
+    console.error('AI error:', e);
   }
   document.getElementById('aiSendBtn').disabled = false;
   input.focus();
