@@ -1298,7 +1298,11 @@ function saveEdit(){
   a.title = title;
   a.subject = document.getElementById('editSubject').value;
   a.noDue = noDue;
-  a.due = (noDue || !dueVal) ? new Date(today) : new Date(dueVal + 'T00:00:00');
+  if(noDue){
+    a.due = new Date(today); // stored as today but flagged noDue — won't show as overdue
+  } else {
+    a.due = dueVal ? new Date(dueVal + 'T00:00:00') : new Date(friday); // default to next Friday if no date picked
+  }
   document.getElementById('editModal').style.display = 'none';
   updateSummary(); render(); saveCurrentData();
 }
@@ -2179,11 +2183,12 @@ function getSmartGoalMessages(goal){
 var aiHistory = [];
 
 function aiGetContext(){
-  var pending = assignments.filter(function(a){ return !a.done && !a.daily; });
+  var pending = assignments.filter(function(a){ return !a.done && !a.daily && !a.noDue; });
   var overdue = pending.filter(function(a){ return a.due < today; });
   var done = assignments.filter(function(a){ return a.done && !a.daily; });
   var goalNames = activeGoals.map(function(g){ return g.name; }).join(', ') || 'none set';
   return 'You are a friendly, encouraging AI homework helper inside a student planner app called MACH 1 Planner. '
+    + 'MACH 1 Planner was created by Grayson Lynn. If anyone asks who made this app, say Grayson Lynn built it. '
     + 'You are talking to ' + (currentStudentName||'G-Lynn') + ', a 6th grade student. '
     + 'Keep responses SHORT and direct — 2 to 4 sentences max unless a step-by-step solution is needed. No fluff, no long intros. Get straight to the point. '
     + 'You help with ALL subjects: math, science, ELA, social studies, reading, writing, and anything else. For math, show steps concisely. For writing, give quick actionable tips. Never just do the homework for them — guide and explain instead. '
