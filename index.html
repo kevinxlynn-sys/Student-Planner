@@ -1242,6 +1242,16 @@ function initApp(){
 
   document.getElementById('xpVal').textContent = xp;
   document.getElementById('xpFill').style.width = Math.min(100,Math.round(xp/2.5))+'%';
+  // Reset AI chat history for this student
+  aiHistory = [];
+  var msgsEl = document.getElementById('aiMessages');
+  if(msgsEl){
+    msgsEl.innerHTML = '<div class="ai-msg bot" id="aiGreeting"></div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">'
+      + '<button class="ai-suggestion" onclick="aiSuggest(\'What should I work on first?\')">🎯 What should I work on first?</button>'
+      + '<button class="ai-suggestion" onclick="aiSuggest(\'How am I doing overall?\')">📊 How am I doing?</button>'
+      + '</div>';
+  }
   // Update AI greeting with real name
   var greet = document.getElementById('aiGreeting');
   if(greet) greet.textContent = 'Hey ' + currentStudentName.split(' ')[0] + '! 👋 Ask me anything about your homework — I can explain concepts, help you prioritize, or check your thinking!';
@@ -2081,7 +2091,8 @@ function showSportsWizard(sport){
     '</div></div>';
 
   // Override save button
-  document.querySelector('.wizard-btn.primary[onclick="saveWizardGoal()"]').onclick = function(){ saveSportsGoal(sport); };
+  var saveBtn = document.getElementById('wizardSaveBtn');
+  if(saveBtn) saveBtn.onclick = function(){ saveSportsGoal(sport); };
   showWizardStep(5);
 }
 
@@ -2128,14 +2139,14 @@ function saveWizardGoal(){
   var bd = isBig ? generateBreakdown({grade:wizardData.grade,strong:wizardData.strong,weak:wizardData.weak,gpa:wizardData.gpa}) : null;
   activeGoals.push({
     uid: uid, id: uid,
-    icon: isBig ? '&#127891;' : '&#127919;',
+    icon: isBig ? '🎓' : '🎯',
     name: wizardData.goalText,
     done: false, custom: true, big: isBig,
     profile: isBig ? {grade:wizardData.grade, strong:wizardData.strong, weak:wizardData.weak, gpa:wizardData.gpa} : null,
     breakdown: bd
   });
   // Restore save button onclick
-  var btn = document.querySelector('.wizard-btn.primary');
+  var btn = document.getElementById('wizardSaveBtn');
   if(btn) btn.onclick = saveWizardGoal;
   saveCurrentData(); closeWizard(); renderGoals(); updateBell(); checkBadges();
 }
@@ -2398,7 +2409,7 @@ async function aiSend(){
       <div class="goal-profile-card" id="wSummaryCard"></div>
       <div class="wizard-btn-row">
         <button class="wizard-btn secondary" onclick="wBack(5)">Back</button>
-        <button class="wizard-btn primary" onclick="saveWizardGoal()">Save Goal &#10003;</button>
+        <button class="wizard-btn primary" id="wizardSaveBtn" onclick="saveWizardGoal()">Save Goal &#10003;</button>
       </div>
     </div>
   </div>
