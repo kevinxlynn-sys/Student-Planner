@@ -1231,10 +1231,8 @@ function showNotifications(){
 function closeNotif(){ document.getElementById('notifOverlay').classList.remove('show'); updateBell(); }
 function scheduleNotifications(){
   notifTimer=setInterval(function(){
-    var now=new Date();
-    var matched=NOTIF_TIMES.some(function(t){ return now.getHours()===t.h&&now.getMinutes()===t.m; });
-    if(matched){ showNotifications(); sendBrowserNotifications(); }
-  },60000);
+    sendBrowserNotifications();
+  },600000); // every 10 minutes
 }
 function sendBrowserNotifications(){
   if(!('Notification' in window)||Notification.permission!=='granted') return;
