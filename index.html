@@ -388,9 +388,18 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
       <input class="add-input" id="signupLast" placeholder="Last name..." style="width:100%;margin-bottom:10px;display:block"/>
       <select class="add-select" id="signupGrade" style="width:100%;margin-bottom:10px;display:block">
         <option value="">Select your grade...</option>
+        <option value="1">1st Grade</option>
+        <option value="2">2nd Grade</option>
+        <option value="3">3rd Grade</option>
+        <option value="4">4th Grade</option>
+        <option value="5">5th Grade</option>
         <option value="6">6th Grade</option>
         <option value="7">7th Grade</option>
         <option value="8">8th Grade</option>
+        <option value="9">9th Grade</option>
+        <option value="10">10th Grade</option>
+        <option value="11">11th Grade</option>
+        <option value="12">12th Grade</option>
       </select>
       <input class="add-input" id="signupUsername" placeholder="Choose a username (min 8 chars)..." style="width:100%;margin-bottom:6px;display:block" oninput="validateSignupUsername()"/>
       <div style="font-size:10px;color:var(--text2);margin-bottom:10px;padding-left:2px">Use letters and numbers only. Min 8 characters.</div>
@@ -586,13 +595,13 @@ function saveStudentData(pin,data){ localStorage.setItem('sp_data_'+pin,JSON.str
 
 // Seed default student Grayson if no students exist
 (function(){
-  // Clear Grayson hardcoded data on fresh start
+  // Wipe all legacy PIN-based data on first load
   var s = getStudents();
-  var hasHardcoded = s.find(function(x){ return x.pin==='3896' || x.username==='G-Lynn'; });
-  if(hasHardcoded){
-    // Wipe legacy data
-    localStorage.removeItem('mach1_students');
-    localStorage.removeItem('mach1_student_3896');
+  var hasLegacy = s.find(function(x){ return x.pin && !x.username; });
+  if(hasLegacy){
+    localStorage.removeItem('sp_students');
+    localStorage.removeItem('sp_data_3896');
+    localStorage.removeItem('sp_data_9999');
   }
 })();
 
