@@ -362,6 +362,19 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
   </div>
 </div>
 
+<div id="feedbackModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:380px;width:100%">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">💬 SEND FEEDBACK</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:16px">Tell G Lynn what you think about the app!</div>
+    <textarea id="feedbackText" placeholder="Type your feedback here..." style="width:100%;height:100px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;resize:none;display:block;margin-bottom:12px"></textarea>
+    <div id="feedbackMsg" style="font-size:11px;color:var(--green);margin-bottom:10px;min-height:16px"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="submitFeedback()" style="flex:1;padding:12px;background:var(--accent2);border:none;color:#fff;border-radius:10px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer">SEND</button>
+      <button onclick="document.getElementById('feedbackModal').style.display='none'" style="padding:12px 16px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:10px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer">CANCEL</button>
+    </div>
+  </div>
+</div>
+
 <div id="loginScreen">
   <div class="login-card" style="max-width:380px">
     <div class="login-logo">MACH<br>1</div>
@@ -474,11 +487,22 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
         <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
       </div>
       <button class="header-btn" onclick="showTutorial()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px" title="How to use this app">❓</button>
+      <button class="header-btn" onclick="openFeedback()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px" title="Send feedback">💬</button>
       <button class="signout-btn" onclick="signOut()">EXIT</button>
     </div>
   </div>
 
-  <div class="main-tabs">
+  <!-- UPDATE BANNER -->
+  <div id="updateBanner" style="display:none;background:rgba(124,58,237,.15);border-bottom:1px solid var(--accent2);padding:10px 16px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:16px">🚀</span>
+    <div style="flex:1">
+      <div class="font-orbitron" style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent2);letter-spacing:1px;margin-bottom:2px">APP UPDATED</div>
+      <div id="updateMsg" style="font-size:11px;color:var(--text2);line-height:1.5"></div>
+    </div>
+    <button onclick="document.getElementById('updateBanner').style.display='none';localStorage.setItem('sp_seen_version',APP_VERSION);" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;cursor:pointer;white-space:nowrap">GOT IT</button>
+  </div>
+
+
     <button class="main-tab active" onclick="showTab('planner',this)">📋 Assignments</button>
     <button class="main-tab" onclick="showTab('workshop',this)">🛠 Workshop</button>
     <button class="main-tab" onclick="showTab('goals',this)">🎯 Goals</button>
@@ -580,6 +604,10 @@ async function sb(table, method, body, query){
 }
 
 var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
+var APP_VERSION = '33';
+var APP_UPDATE_NOTES = {
+  '33': 'Username login is here! Sign in with your username instead of a PIN. All grades are back too. 🎉 No need to reload — just sign up if you haven\'t yet.'
+};
 var filter = 'all';
 var today, friday, monday, tuesday;
 var xp = 0, assignments = [], activeGoals = [];
@@ -1058,6 +1086,12 @@ function initApp(){
   if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
   // Auto-save every 30 seconds
   setInterval(saveCurrentData, 30000);
+  // Show update banner if new version
+  var seenVersion = localStorage.getItem('sp_seen_version');
+  if(seenVersion !== APP_VERSION && APP_UPDATE_NOTES[APP_VERSION]){
+    document.getElementById('updateMsg').textContent = APP_UPDATE_NOTES[APP_VERSION];
+    document.getElementById('updateBanner').style.display = 'flex';
+  }
 }
 
 function showToast(){ var t=document.getElementById('xpToast');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1500); }
@@ -1071,6 +1105,47 @@ function toggle(id){
   document.getElementById('xpFill').style.width=Math.min(100,Math.round(xp/2.5))+'%';
   updateSummary(); render(); updateBell(); saveCurrentData(); checkBadges();
   if(document.getElementById('panel-goals').classList.contains('active')) renderGoals();
+}
+
+var FEEDBACK_RECIPIENT = 'G Lynn'; // Stored under this name's account
+
+function openFeedback(){
+  document.getElementById('feedbackText').value='';
+  document.getElementById('feedbackMsg').textContent='';
+  document.getElementById('feedbackModal').style.display='flex';
+}
+
+function submitFeedback(){
+  var text = document.getElementById('feedbackText').value.trim();
+  if(!text){ document.getElementById('feedbackMsg').style.color='var(--red)'; document.getElementById('feedbackMsg').textContent='Please write something first!'; return; }
+
+  // Find G Lynn's account key
+  var students = getStudents();
+  var glynn = students.find(function(s){ return s.name && s.name.toLowerCase().includes('g lynn') || (s.name && s.name.toLowerCase().split(' ')[0]==='g' && s.name.toLowerCase().split(' ')[1]==='lynn'); });
+  var storageKey = glynn ? 'sp_feedback_'+glynn.username : 'sp_feedback_glynn';
+
+  // Save feedback
+  var existing = [];
+  try{ existing = JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch(e){}
+  existing.push({
+    from: currentStudentName,
+    text: text,
+    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  });
+  localStorage.setItem(storageKey, JSON.stringify(existing));
+
+  document.getElementById('feedbackMsg').style.color='var(--green)';
+  document.getElementById('feedbackMsg').textContent='Sent! Thanks for your feedback 🙏';
+  document.getElementById('feedbackText').value='';
+  setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; }, 1500);
+}
+
+function getFeedbackForCurrentUser(){
+  var students = getStudents();
+  var me = students.find(function(s){ return s.username === currentStudentPin; });
+  if(!me) return [];
+  var storageKey = 'sp_feedback_'+me.username;
+  try{ return JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch(e){ return []; }
 }
 
 function delAssignment(id){
@@ -1218,6 +1293,11 @@ function buildNotifications(){
   });
   var readDone=assignments.find(function(a){ return a.daily&&a.done; });
   if(!readDone) items.push({type:'read',text:'Don\'t forget to READ today! It\'s a daily habit.',sub:'ELA — Daily',cls:'read',badge:'DAILY READ',badgeCls:'badge-blue'});
+  // Show feedback for G Lynn
+  var feedback = getFeedbackForCurrentUser();
+  feedback.forEach(function(f){
+    items.push({type:'feedback',text:'"'+f.text+'"',sub:'From '+f.from+' — '+f.date,cls:'notif-smart',badge:'FEEDBACK',badgeCls:'badge-cyan'});
+  });
   return items;
 }
 function updateBell(){ var items=buildNotifications(); var badge=document.getElementById('bellBadge'); if(items.length>0){badge.textContent=items.length;badge.classList.add('show');}else{badge.classList.remove('show');} }
@@ -1236,10 +1316,64 @@ function scheduleNotifications(){
 }
 function sendBrowserNotifications(){
   if(!('Notification' in window)||Notification.permission!=='granted') return;
-  var items=buildNotifications();
-  var titles={overdue:'⚠️ Student Planner — Overdue!',today:'📌 Student Planner — Due Today!',tomorrow:'📅 Student Planner — Due Tomorrow!',read:'📖 Student Planner — READ Reminder',smart:'🎯 Student Planner — Goal Reminder'};
-  var max=Math.min(items.length,3);
-  for(var i=0;i<max;i++){(function(item,delay){ setTimeout(function(){ new Notification(titles[item.type]||'Student Planner',{body:item.text,tag:'planner-'+item.type,requireInteraction:true}); },delay); })(items[i],i*1500);}
+
+  var msgs = [];
+  var pending = assignments.filter(function(a){ return !a.done && !a.daily && !a.noDue; });
+  var overdue = pending.filter(function(a){ return a.due < today; });
+  var dueToday = pending.filter(function(a){ return a.due.toDateString()===today.toDateString(); });
+  var dueSoon = pending.filter(function(a){ var diff=Math.round((a.due-today)/86400000); return diff>=1&&diff<=2; });
+  var readItem = assignments.find(function(a){ return a.daily; });
+  var goalName = activeGoals.length ? activeGoals[0].name : null;
+
+  // Overdue
+  if(overdue.length){
+    msgs.push({title:'⚠️ Heads up, '+currentStudentName.split(' ')[0]+'!', body:overdue.length+' assignment'+(overdue.length>1?'s are':' is')+' overdue. Let\'s knock '+(overdue.length>1?'them':'it')+' out!'});
+  }
+
+  // Due today
+  if(dueToday.length){
+    msgs.push({title:'📌 Due today!', body:dueToday[0].title+(dueToday.length>1?' and '+(dueToday.length-1)+' more':'')+' — get it done!'});
+  }
+
+  // Due soon
+  if(dueSoon.length && !dueToday.length){
+    msgs.push({title:'📅 Coming up soon', body:dueSoon[0].title+' is due in '+(Math.round((dueSoon[0].due-today)/86400000)===1?'tomorrow':'2 days')+'. Start early!'});
+  }
+
+  // Goal motivation
+  if(goalName){
+    var goalMsgs = [
+      'Keep pushing toward '+goalName+' — every assignment you finish gets you closer! 💪',
+      'You\'re working toward '+goalName+'. Don\'t let today\'s work slide!',
+      'Champions finish their homework. Stay on track for '+goalName+'! 🏆',
+      goalName+' is waiting. Finish strong today! 🚀',
+    ];
+    msgs.push({title:'🎯 Goal reminder', body:goalMsgs[Math.floor(Math.random()*goalMsgs.length)]});
+  }
+
+  // READ reminder
+  if(readItem && !readItem.done){
+    msgs.push({title:'📖 Daily READ', body:'Don\'t forget to read today! Keep that streak going!'});
+  }
+
+  // All caught up — send a positive message
+  if(!msgs.length){
+    var positives = [
+      'You\'re all caught up! 🎉 Keep it up, '+currentStudentName.split(' ')[0]+'!',
+      'Nothing overdue — you\'re crushing it! 💪',
+      'Great work staying on top of everything!',
+    ];
+    msgs.push({title:'✅ Student Planner', body:positives[Math.floor(Math.random()*positives.length)]});
+  }
+
+  var max = Math.min(msgs.length, 2);
+  for(var i=0;i<max;i++){
+    (function(m,delay){
+      setTimeout(function(){
+        new Notification(m.title,{body:m.body,tag:'planner-'+i,requireInteraction:false});
+      },delay);
+    })(msgs[i],i*2000);
+  }
 }
 
 // ── GOALS ──
