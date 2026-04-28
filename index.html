@@ -320,29 +320,6 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
   </div>
 </div>
 
-<div id="adminOverlay">
-  <div class="admin-panel">
-    <div class="admin-title">
-      ADMIN — Manage Students
-      <button class="admin-close" onclick="closeAdmin()">CLOSE</button>
-    </div>
-    <div class="admin-section">
-      <div class="admin-section-title">Add New Student</div>
-      <div class="add-student-row">
-        <input class="admin-input" id="newStudentName" placeholder="Student name..."/>
-        <input class="admin-input" id="newStudentPin" placeholder="4-digit PIN..." maxlength="4" style="width:120px;flex:none"/>
-        <button class="admin-add-btn" onclick="addStudent()">+ Add</button>
-      </div>
-      <div class="error-msg" id="adminError" style="text-align:left;margin-top:8px"></div>
-      <div class="success-msg" id="adminSuccess"></div>
-    </div>
-    <div class="admin-section">
-      <div class="admin-section-title">Current Students</div>
-      <div id="studentsList"></div>
-    </div>
-  </div>
-</div>
-
 <div id="undatedModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:380px;width:100%">
     <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent3);letter-spacing:1px;margin-bottom:8px">📅 UNDATED ITEMS</div>
@@ -386,7 +363,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 </div>
 
 <div id="loginScreen">
-  <div class="login-card" style="max-width:420px">
+  <div class="login-card" style="max-width:380px">
     <div class="login-logo">MACH<br>1</div>
     <div class="login-title">Student Planner</div>
 
@@ -398,29 +375,10 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 
     <!-- LOGIN PANEL -->
     <div id="loginPanel">
-      <div class="login-sub">Enter your 4-digit PIN to access your planner</div>
-      <div class="pin-display">
-        <div class="pin-dot" id="dot0"></div>
-        <div class="pin-dot" id="dot1"></div>
-        <div class="pin-dot" id="dot2"></div>
-        <div class="pin-dot" id="dot3"></div>
-      </div>
-      <div class="numpad">
-        <button class="num-btn" onclick="enterDigit('1')">1</button>
-        <button class="num-btn" onclick="enterDigit('2')">2</button>
-        <button class="num-btn" onclick="enterDigit('3')">3</button>
-        <button class="num-btn" onclick="enterDigit('4')">4</button>
-        <button class="num-btn" onclick="enterDigit('5')">5</button>
-        <button class="num-btn" onclick="enterDigit('6')">6</button>
-        <button class="num-btn" onclick="enterDigit('7')">7</button>
-        <button class="num-btn" onclick="enterDigit('8')">8</button>
-        <button class="num-btn" onclick="enterDigit('9')">9</button>
-        <button class="num-btn clear" onclick="clearPin()">CLR</button>
-        <button class="num-btn zero" onclick="enterDigit('0')">0</button>
-        <button class="num-btn clear" onclick="backspace()">&#9003;</button>
-      </div>
-      <button class="start-btn" id="startBtn" onclick="checkPin()" disabled>START</button>
+      <div class="login-sub">Enter your username to access your planner</div>
+      <input class="add-input" id="loginUsername" placeholder="Your username..." style="width:100%;margin-bottom:10px;display:block" oninput="document.getElementById('startBtn').disabled=this.value.trim().length<8" onkeydown="if(event.key==='Enter')checkUsername()"/>
       <div class="error-msg" id="errorMsg"></div>
+      <button class="start-btn" id="startBtn" onclick="checkUsername()" disabled>START</button>
     </div>
 
     <!-- SIGNUP PANEL -->
@@ -430,40 +388,12 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
       <input class="add-input" id="signupLast" placeholder="Last name..." style="width:100%;margin-bottom:10px;display:block"/>
       <select class="add-select" id="signupGrade" style="width:100%;margin-bottom:10px;display:block">
         <option value="">Select your grade...</option>
-        <option value="1">1st Grade</option>
-        <option value="2">2nd Grade</option>
-        <option value="3">3rd Grade</option>
-        <option value="4">4th Grade</option>
-        <option value="5">5th Grade</option>
         <option value="6">6th Grade</option>
         <option value="7">7th Grade</option>
         <option value="8">8th Grade</option>
-        <option value="9">9th Grade</option>
-        <option value="10">10th Grade</option>
-        <option value="11">11th Grade</option>
-        <option value="12">12th Grade</option>
       </select>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-family:'Orbitron',monospace;letter-spacing:.5px">CHOOSE A 4-DIGIT PIN</div>
-      <div class="pin-display" id="signupPinDisplay">
-        <div class="pin-dot" id="sdot0"></div>
-        <div class="pin-dot" id="sdot1"></div>
-        <div class="pin-dot" id="sdot2"></div>
-        <div class="pin-dot" id="sdot3"></div>
-      </div>
-      <div class="numpad">
-        <button class="num-btn" onclick="enterSignupDigit('1')">1</button>
-        <button class="num-btn" onclick="enterSignupDigit('2')">2</button>
-        <button class="num-btn" onclick="enterSignupDigit('3')">3</button>
-        <button class="num-btn" onclick="enterSignupDigit('4')">4</button>
-        <button class="num-btn" onclick="enterSignupDigit('5')">5</button>
-        <button class="num-btn" onclick="enterSignupDigit('6')">6</button>
-        <button class="num-btn" onclick="enterSignupDigit('7')">7</button>
-        <button class="num-btn" onclick="enterSignupDigit('8')">8</button>
-        <button class="num-btn" onclick="enterSignupDigit('9')">9</button>
-        <button class="num-btn clear" onclick="clearSignupPin()">CLR</button>
-        <button class="num-btn zero" onclick="enterSignupDigit('0')">0</button>
-        <button class="num-btn clear" onclick="backspaceSignup()">&#9003;</button>
-      </div>
+      <input class="add-input" id="signupUsername" placeholder="Choose a username (min 8 chars)..." style="width:100%;margin-bottom:6px;display:block" oninput="validateSignupUsername()"/>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:10px;padding-left:2px">Use letters and numbers only. Min 8 characters.</div>
       <div class="error-msg" id="signupMsg" style="min-height:18px;margin-bottom:8px"></div>
       <button class="start-btn" id="signupBtn" onclick="createAccount()" disabled>CREATE ACCOUNT</button>
     </div>
@@ -534,7 +464,6 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
         <div class="xp-lbl">XP: <span id="xpVal">0</span></div>
         <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
       </div>
-      <button class="admin-btn-small" id="adminBtn" style="display:none" onclick="openAdmin()">ADMIN</button>
       <button class="header-btn" onclick="showTutorial()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px" title="How to use this app">❓</button>
       <button class="signout-btn" onclick="signOut()">EXIT</button>
     </div>
@@ -641,7 +570,6 @@ async function sb(table, method, body, query){
   }
 }
 
-var ADMIN_PIN = '9999';
 var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
 var filter = 'all';
 var today, friday, monday, tuesday;
@@ -658,28 +586,17 @@ function saveStudentData(pin,data){ localStorage.setItem('sp_data_'+pin,JSON.str
 
 // Seed default student Grayson if no students exist
 (function(){
+  // Clear Grayson hardcoded data on fresh start
   var s = getStudents();
-  var hasGrayson = s.find(function(x){ return x.pin==='3896'; });
-  if(!hasGrayson){
-    s.push({name:'G-Lynn',pin:'3896',grade:'6'});
-    saveStudents(s);
-  } else {
-    // Update name and grade if already exists
-    hasGrayson.name = 'G-Lynn';
-    hasGrayson.grade = '6';
-    saveStudents(s);
+  var hasHardcoded = s.find(function(x){ return x.pin==='3896' || x.username==='G-Lynn'; });
+  if(hasHardcoded){
+    // Wipe legacy data
+    localStorage.removeItem('mach1_students');
+    localStorage.removeItem('mach1_student_3896');
   }
 })();
 
-// ── PIN ──
-var pin='';
-function enterDigit(d){if(pin.length>=4)return;pin+=d;updateDots();document.getElementById('errorMsg').textContent='';if(pin.length===4)document.getElementById('startBtn').disabled=false;}
-function backspace(){pin=pin.slice(0,-1);document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
-function clearPin(){pin='';document.getElementById('startBtn').disabled=true;document.getElementById('errorMsg').textContent='';updateDots();}
-function updateDots(){for(var i=0;i<4;i++){document.getElementById('dot'+i).className='pin-dot'+(i<pin.length?' filled':'');}}
-
-var signupPin = '';
-
+// ── USERNAME AUTH ──
 function switchAuthTab(tab){
   if(tab==='login'){
     document.getElementById('loginPanel').style.display='block';
@@ -698,111 +615,77 @@ function switchAuthTab(tab){
   }
 }
 
-function enterSignupDigit(d){
-  if(signupPin.length>=4) return;
-  signupPin+=d;
-  updateSignupDots();
-  document.getElementById('signupMsg').textContent='';
-  document.getElementById('signupMsg').style.color='var(--red)';
-  if(signupPin.length===4) checkSignupPin();
-}
-function backspaceSignup(){ signupPin=signupPin.slice(0,-1); updateSignupDots(); document.getElementById('signupBtn').disabled=true; }
-function clearSignupPin(){ signupPin=''; updateSignupDots(); document.getElementById('signupBtn').disabled=true; }
-function updateSignupDots(){ for(var i=0;i<4;i++){ document.getElementById('sdot'+i).className='pin-dot'+(i<signupPin.length?' filled':''); } }
-
-async function checkSignupPin(){
-  if(signupPin===ADMIN_PIN){ document.getElementById('signupMsg').textContent='That PIN is reserved. Choose another.'; clearSignupPin(); return; }
-  try {
-    var existing = getStudents().find(function(s){ return s.pin===signupPin; });
-    if(existing){
-      document.getElementById('signupMsg').textContent='That PIN is already taken! Try a different one.';
-      document.getElementById('signupMsg').style.color='var(--red)';
-      setTimeout(function(){ clearSignupPin(); },1000);
-      return;
-    }
-    // Also check Supabase
-    var dbCheck = await sb('students','GET',null,'?pin=eq.'+signupPin);
-    if(dbCheck.length){
-      document.getElementById('signupMsg').textContent='That PIN is already taken! Try a different one.';
-      document.getElementById('signupMsg').style.color='var(--red)';
-      setTimeout(function(){ clearSignupPin(); },1000);
-      return;
-    }
-    document.getElementById('signupMsg').textContent='PIN available! ✓';
-    document.getElementById('signupMsg').style.color='var(--green)';
-    document.getElementById('signupBtn').disabled=false;
-  } catch(e){
-    // Fallback - just allow it
-    document.getElementById('signupMsg').textContent='PIN set! ✓';
-    document.getElementById('signupMsg').style.color='var(--green)';
-    document.getElementById('signupBtn').disabled=false;
-  }
+function validateSignupUsername(){
+  var val = document.getElementById('signupUsername').value.trim();
+  var msg = document.getElementById('signupMsg');
+  var btn = document.getElementById('signupBtn');
+  if(val.length < 8){ msg.textContent='Username must be at least 8 characters.'; msg.style.color='var(--red)'; btn.disabled=true; return; }
+  if(!/^[a-zA-Z0-9]+$/.test(val)){ msg.textContent='Letters and numbers only.'; msg.style.color='var(--red)'; btn.disabled=true; return; }
+  var taken = getStudents().find(function(s){ return s.username && s.username.toLowerCase()===val.toLowerCase(); });
+  if(taken){ msg.textContent='Username already taken. Try another.'; msg.style.color='var(--red)'; btn.disabled=true; return; }
+  msg.textContent='Username available ✓'; msg.style.color='var(--green)';
+  btn.disabled=false;
 }
 
 async function createAccount(){
-  var first=document.getElementById('signupFirst').value.trim();
-  var last=document.getElementById('signupLast').value.trim();
-  var grade=document.getElementById('signupGrade').value;
-  var msg=document.getElementById('signupMsg');
+  var first = document.getElementById('signupFirst').value.trim();
+  var last = document.getElementById('signupLast').value.trim();
+  var grade = document.getElementById('signupGrade').value;
+  var username = document.getElementById('signupUsername').value.trim();
+  var msg = document.getElementById('signupMsg');
   if(!first||!last){ msg.textContent='Please enter your first and last name.'; msg.style.color='var(--red)'; return; }
   if(!grade){ msg.textContent='Please select your grade.'; msg.style.color='var(--red)'; return; }
-  if(signupPin.length!==4){ msg.textContent='Please choose a 4-digit PIN.'; msg.style.color='var(--red)'; return; }
+  if(username.length<8){ msg.textContent='Username must be at least 8 characters.'; msg.style.color='var(--red)'; return; }
   var fullName = first + ' ' + last;
-  msg.textContent='Creating account...'; msg.style.color='var(--accent3)';
-  try {
-    await sb('students','POST',{name:fullName,pin:signupPin,xp:0,grade:grade},null);
-  } catch(e){ console.log('DB save failed, using localStorage'); }
   var students = getStudents();
-  students.push({name:fullName,pin:signupPin,grade:grade});
+  students.push({name:fullName, username:username, grade:grade});
   saveStudents(students);
-  currentStudentPin=signupPin; currentStudentName=fullName; isAdmin=false;
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('appScreen').style.display='block'; var _aw=document.getElementById('aiWidget'); if(_aw){_aw.style.display='flex';_aw.style.flexDirection='column';_aw.style.alignItems='flex-start';} aiExpandWidget();
-  initApp();
-  // Show tutorial for new accounts
+  currentStudentPin = username;
+  currentStudentName = fullName;
+  isAdmin = false;
+  loginSuccess();
   setTimeout(function(){ showTutorial(); }, 500);
 }
 
-function checkPin(){
-  if(pin===ADMIN_PIN){
-    isAdmin=true;
-    currentStudentPin='9999';
-    currentStudentName='Admin';
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('appScreen').style.display='block'; var _aw=document.getElementById('aiWidget'); if(_aw){_aw.style.display='flex';_aw.style.flexDirection='column';_aw.style.alignItems='flex-start';} aiExpandWidget();
-    clearPin();
-    initApp();
-    setTimeout(function(){ openAdmin(); },500);
-    return;
-  }
+function checkUsername(){
+  var username = document.getElementById('loginUsername').value.trim();
   var students = getStudents();
-  var student = students.find(function(s){ return s.pin===pin; });
+  var student = students.find(function(s){ return s.username && s.username.toLowerCase()===username.toLowerCase(); });
   if(!student){
-    document.getElementById('errorMsg').textContent='WRONG CODE. TRY AGAIN.';
-    for(var i=0;i<4;i++) document.getElementById('dot'+i).className='pin-dot error';
-    var card=document.querySelector('.login-card');
+    document.getElementById('errorMsg').textContent='Username not found. Try again or sign up.';
+    document.getElementById('errorMsg').style.color='var(--red)';
+    var card = document.querySelector('.login-card');
     card.classList.add('shake');
-    setTimeout(function(){card.classList.remove('shake');clearPin();},400);
+    setTimeout(function(){ card.classList.remove('shake'); },400);
   } else {
-    currentStudentPin = pin;
+    currentStudentPin = student.username;
     currentStudentName = student.name;
     isAdmin = false;
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('appScreen').style.display='block'; var _aw=document.getElementById('aiWidget'); if(_aw){_aw.style.display='flex';_aw.style.flexDirection='column';_aw.style.alignItems='flex-start';} aiExpandWidget();
-    initApp();
+    loginSuccess();
   }
+}
+
+function loginSuccess(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  var _aw=document.getElementById('aiWidget');
+  if(_aw){_aw.style.display='flex';_aw.style.flexDirection='column';_aw.style.alignItems='flex-start';}
+  aiExpandWidget();
+  initApp();
 }
 
 function signOut(){
   saveCurrentData();
-  document.getElementById('appScreen').style.display='none'; var _aw=document.getElementById('aiWidget'); if(_aw) _aw.style.display='none';
+  document.getElementById('appScreen').style.display='none';
+  var _aw=document.getElementById('aiWidget'); if(_aw) _aw.style.display='none';
   document.getElementById('loginScreen').style.display='flex';
-  clearPin();
+  document.getElementById('loginUsername').value='';
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('errorMsg').textContent='';
   if(notifTimer) clearInterval(notifTimer);
 }
 
 // ── TABS ──
-var aiExpanded = false;
 function aiExpandWidget(){
   // Directly expand without calling aiToggle to avoid any null-ref race
   aiExpanded = true;
@@ -841,104 +724,8 @@ function showTab(name,btn){
   if(name==='badges') renderBadges();
 }
 
-// ── ADMIN ──
-function openAdmin(){ renderStudentsList(); document.getElementById('adminOverlay').classList.add('show'); }
-function closeAdmin(){ document.getElementById('adminOverlay').classList.remove('show'); }
-
-function renderStudentsList(){
-  var students = getStudents();
-  var list = document.getElementById('studentsList');
-  if(!students.length){ list.innerHTML='<div class="empty-state" style="padding:12px;font-size:12px">No students yet!</div>'; return; }
-  list.innerHTML = students.map(function(s){
-    var data = getStudentData(s.pin);
-    var xp = data ? (data.xp||0) : 0;
-    return '<div class="student-row">'+
-      '<div class="student-row-name">'+s.name+'</div>'+
-      '<div class="student-row-pin">PIN: '+s.pin+'</div>'+
-      '<div class="student-row-xp">'+xp+' XP</div>'+
-      '<button style="background:none;border:1px solid #f59e0b;color:#f59e0b;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-right:6px" onclick="resetStudentDates(\'' + s.pin + '\')">RESET</button>'+
-      '<button class="student-del" onclick="deleteStudent(\''+s.pin+'\')">&#10005;</button>'+
-    '</div>';
-  }).join('');
-}
-
-async function addStudent(){
-  var name = document.getElementById('newStudentName').value.trim();
-  var p = document.getElementById('newStudentPin').value.trim();
-  var err = document.getElementById('adminError');
-  var suc = document.getElementById('adminSuccess');
-  err.textContent=''; suc.textContent='';
-  if(!name||!p){ err.textContent='Name and PIN required!'; return; }
-  if(p.length!==4||isNaN(Number(p))){ err.textContent='PIN must be exactly 4 digits!'; return; }
-  if(p===ADMIN_PIN){ err.textContent='That PIN is reserved for admin!'; return; }
-  try {
-    var existing = await sb('students','GET',null,'?pin=eq.'+p);
-    if(existing.length){ err.textContent='That PIN is already taken!'; return; }
-    await sb('students','POST',{name:name,pin:p,xp:0},null);
-    // Also save to localStorage as backup
-    var students = getStudents();
-    students.push({name:name,pin:p});
-    saveStudents(students);
-    document.getElementById('newStudentName').value='';
-    document.getElementById('newStudentPin').value='';
-    suc.textContent='Student '+name+' added!';
-    setTimeout(function(){ suc.textContent=''; },2000);
-    renderStudentsList();
-  } catch(e){
-    // Fallback to localStorage
-    var students = getStudents();
-    if(students.find(function(s){ return s.pin===p; })){ err.textContent='That PIN is already taken!'; return; }
-    students.push({name:name,pin:p});
-    saveStudents(students);
-    document.getElementById('newStudentName').value='';
-    document.getElementById('newStudentPin').value='';
-    suc.textContent='Student '+name+' added!';
-    setTimeout(function(){ suc.textContent=''; },2000);
-    renderStudentsList();
-  }
-}
-
-function resetStudentDates(pin){
-  var data = getStudentData(pin);
-  if(!data){ return; }
-  // Wipe ALL non-daily assignments — student should reload their list fresh
-  if(data.assignments){
-    data.assignments = data.assignments.filter(function(a){ return a.daily; });
-  }
-  saveStudentData(pin, data);
-  var list = document.getElementById('studentsList');
-  var banner = document.createElement('div');
-  banner.style.cssText = 'background:#0d2a1a;border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#34d399;font-family:Orbitron,monospace;letter-spacing:.5px';
-  banner.textContent = 'Done! Tell G-Lynn to refresh and reload his workshop list.';
-  list.parentNode.insertBefore(banner, list);
-  setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 4000);
-}
-
-async function deleteStudent(p){
-  var students = getStudents();
-  var student = students.find(function(s){ return s.pin===p; });
-  var name = student ? student.name : 'this student';
-  var old = document.getElementById('delConfirmBanner');
-  if(old) old.parentNode.removeChild(old);
-  var banner = document.createElement('div');
-  banner.id = 'delConfirmBanner';
-  banner.style.cssText = 'background:#2d1a1a;border:1px solid var(--red);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
-  banner.innerHTML = '<span style="flex:1;font-size:12px;color:#f87171">Delete <b>'+name+'</b> and all their data?</span>'
-    +'<button onclick="confirmDeleteStudent(\''+p+'\')" style="background:var(--red);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-family:Orbitron,monospace;font-size:10px;cursor:pointer">YES, DELETE</button>'
-    +'<button onclick="document.getElementById(\'delConfirmBanner\').remove()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;font-family:Orbitron,monospace;font-size:10px;cursor:pointer">CANCEL</button>';
-  var list = document.getElementById('studentsList');
-  list.parentNode.insertBefore(banner, list);
-}
-
-async function confirmDeleteStudent(p){
-  var banner = document.getElementById('delConfirmBanner');
-  if(banner) banner.remove();
-  try { await sb('students','DELETE',null,'?pin=eq.'+p); } catch(e){ console.log('DB delete failed'); }
-  var students = getStudents().filter(function(s){ return s.pin!==p; });
-  saveStudents(students);
-  localStorage.removeItem('sp_data_'+p);
-  renderStudentsList();
-}
+// ── TABS ──
+var aiExpanded = false;
 
 
 var BADGE_DEFS = [
@@ -1183,7 +970,6 @@ function initApp(){
   friday=getNextDay('Friday'); monday=getNextDay('Monday'); tuesday=getNextDay('Tuesday');
   var todayStr = today.toISOString().slice(0,10);
 
-  document.getElementById('adminBtn').style.display = (isAdmin || currentStudentPin==='3896') ? 'block' : 'none';
   document.getElementById('studentNameDisplay').textContent = currentStudentName + ' — ' + today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('notifName').textContent = 'Hey ' + currentStudentName + '!';
   document.title = currentStudentName + "'s Planner";
