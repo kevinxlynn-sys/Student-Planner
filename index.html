@@ -281,36 +281,26 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script>
+// Check for new version every 2 minutes and auto-reload if found
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(function(reg){
-    reg.addEventListener('updatefound', function(){
-      var newWorker = reg.installing;
-      newWorker.addEventListener('statechange', function(){
-        if(newWorker.state === 'activated'){
-          // New version installed — show update overlay if logged in
-          var overlay = document.getElementById('updateOverlay');
-          var msg = document.getElementById('updateOverlayMsg');
-          if(overlay && msg){
-            var note = typeof APP_UPDATE_NOTES !== 'undefined' && typeof APP_VERSION !== 'undefined' ? APP_UPDATE_NOTES[APP_VERSION] : null;
-            if(note){ msg.textContent = note; overlay.style.display = 'flex'; }
-          }
-        }
-      });
-    });
-  });
-  // Listen for messages from service worker
-  navigator.serviceWorker.addEventListener('message', function(e){
-    if(e.data && e.data.type === 'APP_UPDATED'){
-      var overlay = document.getElementById('updateOverlay');
-      var msg = document.getElementById('updateOverlayMsg');
-      if(overlay && msg){
-        var note = typeof APP_UPDATE_NOTES !== 'undefined' && typeof APP_VERSION !== 'undefined' ? APP_UPDATE_NOTES[APP_VERSION] : 'The app has been updated! Refresh for the latest version.';
-        msg.textContent = note;
-        overlay.style.display = 'flex';
-      }
-    }
-  });
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
 }
+
+setInterval(function(){
+  fetch('/index.html?v=' + Date.now(), {cache: 'no-store'})
+    .then(function(r){ return r.text(); })
+    .then(function(html){
+      var match = html.match(/APP_VERSION\s*=\s*'(\d+)'/);
+      if(match){
+        var latestVersion = match[1];
+        var currentVersion = typeof APP_VERSION !== 'undefined' ? APP_VERSION : null;
+        if(currentVersion && latestVersion !== currentVersion){
+          // New version found — reload the page
+          window.location.reload(true);
+        }
+      }
+    }).catch(function(){});
+}, 120000); // every 2 minutes
 </script>
 </head>
 
