@@ -502,14 +502,14 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
     </div>
   </div>
 
-  <!-- UPDATE BANNER -->
-  <div id="updateBanner" style="display:none;background:rgba(124,58,237,.15);border:1px solid var(--accent2);border-radius:10px;padding:10px 16px;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-    <span style="font-size:16px">🚀</span>
-    <div style="flex:1">
-      <div class="font-orbitron" style="font-family:'Orbitron',monospace;font-size:10px;color:var(--accent2);letter-spacing:1px;margin-bottom:2px">APP UPDATED</div>
-      <div id="updateMsg" style="font-size:11px;color:var(--text2);line-height:1.5"></div>
+  <!-- UPDATE OVERLAY -->
+  <div id="updateOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border:1px solid var(--accent2);border-radius:20px;padding:36px 28px;max-width:420px;width:100%;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🚀</div>
+      <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--accent2);letter-spacing:2px;margin-bottom:12px">APP UPDATED!</div>
+      <div id="updateOverlayMsg" style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:24px"></div>
+      <button onclick="document.getElementById('updateOverlay').style.display='none';localStorage.setItem('sp_seen_version',APP_VERSION);" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;color:#fff;font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;border-radius:12px;cursor:pointer">GOT IT — LET'S GO! 🎮</button>
     </div>
-    <button onclick="document.getElementById('updateBanner').style.display='none';localStorage.setItem('sp_seen_version',APP_VERSION);" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;cursor:pointer;white-space:nowrap">GOT IT</button>
   </div>
 
 
@@ -1098,11 +1098,11 @@ function initApp(){
   if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
   // Auto-save every 30 seconds
   setInterval(saveCurrentData, 30000);
-  // Show update notification if new version
+  // Show update overlay if new version
   var seenVersion = localStorage.getItem('sp_seen_version');
   if(seenVersion !== APP_VERSION && APP_UPDATE_NOTES[APP_VERSION]){
-    document.getElementById('updateMsg').textContent = APP_UPDATE_NOTES[APP_VERSION];
-    document.getElementById('updateBanner').style.display = 'flex';
+    document.getElementById('updateOverlayMsg').textContent = APP_UPDATE_NOTES[APP_VERSION];
+    document.getElementById('updateOverlay').style.display = 'flex';
     // Also send real browser notification
     if('Notification' in window && Notification.permission === 'granted'){
       setTimeout(function(){
