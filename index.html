@@ -1152,7 +1152,7 @@ function saveCurrentData(){
     assignments: data.assignments,
     goals: activeGoals,
     badges: earnedBadges,
-    workshop_data: {data:workshopData, weeks:workshopWeeks, readStreak:readStreak, lastReadDate:lastReadDate},
+    workshop_data: {data:workshopData, weeks:workshopWeeks, readStreak:readStreak, lastReadDate:lastReadDate, schedule:scheduleData},
     updated_at: new Date().toISOString()
   },'?on_conflict=username').then(function(){}).catch(function(){});
 }
@@ -1236,6 +1236,12 @@ function loadStudentData(saved){
     earnedBadges = saved.earnedBadges||saved.badges||[];
     readStreak = saved.readStreak||(saved.workshop_data&&saved.workshop_data.readStreak)||0;
     lastReadDate = saved.lastReadDate||(saved.workshop_data&&saved.workshop_data.lastReadDate)||null;
+    // Load schedule from cloud or localStorage
+    var cloudSchedule = saved.workshop_data&&saved.workshop_data.schedule;
+    if(cloudSchedule) {
+      scheduleData = cloudSchedule;
+      localStorage.setItem('sp_schedule_'+currentStudentPin, JSON.stringify(scheduleData));
+    }
     var rawAssignments = saved.assignments||[];
     assignments = rawAssignments.map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
