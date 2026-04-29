@@ -628,10 +628,11 @@ async function sb(table, method, body, query){
 }
 
 var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
-var APP_VERSION = '34';
+var APP_VERSION = '35';
 var APP_UPDATE_NOTES = {
-  '33': 'Username login is here! Sign in with your username instead of a PIN.',
-  '34': 'Feedback inbox added, notifications fixed, and layout improved. No need to reload — everything works automatically!'
+  '33': 'Username login is here!',
+  '34': 'Feedback inbox added and notifications improved.',
+  '35': '🔄 Cross-device sync is live! Your assignments now follow you to any computer. Log in anywhere and your data is there.'
 };
 var filter = 'all';
 var today, friday, monday, tuesday;
@@ -986,7 +987,20 @@ function saveCurrentData(){
     readStreak: readStreak,
     lastReadDate: lastReadDate
   };
+  // Always save to localStorage as backup
   saveStudentData(currentStudentPin, data);
+  // Sync to Supabase for cross-device access
+  sb('student_data','POST',{
+    username: currentStudentPin,
+    name: currentStudentName,
+    grade: (getStudents().find(function(s){ return s.username===currentStudentPin; })||{}).grade||'6',
+    xp: xp,
+    assignments: data.assignments,
+    goals: activeGoals,
+    badges: earnedBadges,
+    workshop_data: {data:workshopData, weeks:workshopWeeks, readStreak:readStreak, lastReadDate:lastReadDate},
+    updated_at: new Date().toISOString()
+  },'?on_conflict=username').then(function(){}).catch(function(){});
 }
 
 var tutStep = 0;
@@ -1046,19 +1060,33 @@ function initApp(){
     resetWeeklyAssignments = false;
   }
 
-  // Load saved data
-  var saved = getStudentData(currentStudentPin);
+  // Load saved data — try Supabase first, fall back to localStorage
+  sb('student_data','GET',null,'?username=eq.'+encodeURIComponent(currentStudentPin)+'&limit=1').then(function(rows){
+    var cloud = rows && rows[0];
+    var local = getStudentData(currentStudentPin);
+    var saved = cloud || local;
+    loadStudentData(saved);
+  }).catch(function(){
+    loadStudentData(getStudentData(currentStudentPin));
+  });
+}
+
+function loadStudentData(saved){
+  var todayStr = today.toISOString().slice(0,10);
   if(saved){
     xp = saved.xp||0;
-    workshopData = saved.workshopData||{};
-    workshopWeeks = saved.workshopWeeks||[];
-    activeGoals = saved.activeGoals||[];
-    earnedBadges = saved.earnedBadges||[];
-    readStreak = saved.readStreak||0;
-    lastReadDate = saved.lastReadDate||null;
-    assignments = (saved.assignments||[]).map(function(a){
+    // Support both cloud format and local format
+    workshopData = saved.workshopData||(saved.workshop_data&&saved.workshop_data.data)||{};
+    workshopWeeks = saved.workshopWeeks||(saved.workshop_data&&saved.workshop_data.weeks)||[];
+    activeGoals = saved.activeGoals||saved.goals||[];
+    earnedBadges = saved.earnedBadges||saved.badges||[];
+    readStreak = saved.readStreak||(saved.workshop_data&&saved.workshop_data.readStreak)||0;
+    lastReadDate = saved.lastReadDate||(saved.workshop_data&&saved.workshop_data.lastReadDate)||null;
+    var rawAssignments = saved.assignments||[];
+    assignments = rawAssignments.map(function(a){
       if(a.daily) return {id:a.id,title:a.title,subject:a.subject,due:new Date(today),priority:a.priority||'medium',daily:true,done:a.done||false};
-      var due = new Date(a.dueStr+'T00:00:00');
+      var due = new Date((a.dueStr||a.due)+'T00:00:00'.slice(0, a.dueStr ? undefined : 0));
+      if(isNaN(due)) due = new Date(today);
       return {id:a.id,title:a.title,subject:a.subject,due:due,priority:a.priority||'medium',daily:false,done:a.done||false,workshopImport:a.workshopImport||false,noDue:a.noDue||false};
     });
     // Reset READ for today
@@ -1071,10 +1099,7 @@ function initApp(){
     } else {
       assignments.push({id:99,title:'READ (Daily)',subject:'ELA',due:new Date(today),priority:'low',daily:true,done:false});
     }
-
-    // Weekly reset removed — G loads fresh list each week via Workshop
   } else {
-    // Fresh start - new accounts begin empty
     xp = 0;
     workshopData = {}; workshopWeeks = [];
     activeGoals = []; earnedBadges = []; readStreak = 0; lastReadDate = null;
@@ -1116,7 +1141,6 @@ function initApp(){
   if(seenVersion !== APP_VERSION && APP_UPDATE_NOTES[APP_VERSION]){
     document.getElementById('updateOverlayMsg').textContent = APP_UPDATE_NOTES[APP_VERSION];
     document.getElementById('updateOverlay').style.display = 'flex';
-    // Also send real browser notification
     if('Notification' in window && Notification.permission === 'granted'){
       setTimeout(function(){
         new Notification('🚀 MACH 1 Planner Updated!', {
