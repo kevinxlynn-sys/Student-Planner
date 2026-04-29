@@ -531,6 +531,7 @@ setInterval(function(){
     <button class="main-tab" onclick="showTab('workshop',this)">🛠 Workshop</button>
     <button class="main-tab" onclick="showTab('goals',this)">🎯 Goals</button>
     <button class="main-tab" onclick="showTab('badges',this)">🏅 Badges</button>
+    <button class="main-tab" onclick="showTab('schedule',this)">🗓 Schedule</button>
   </div>
 
   <div class="panel active" id="panel-planner">
@@ -568,8 +569,7 @@ setInterval(function(){
     <div id="plannerContainer"></div>
   </div>
 
-  <div id="panel-badges" class="panel">
-    <div style="font-size:13px;color:var(--accent);font-weight:bold;letter-spacing:1px;margin-bottom:16px">YOUR BADGES</div>
+  <div id="panel-badges" class="panel">    <div style="font-size:13px;color:var(--accent);font-weight:bold;letter-spacing:1px;margin-bottom:16px">YOUR BADGES</div>
     <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
     <div id="badgesEmpty" style="display:none;text-align:center;padding:40px;color:var(--text2);font-size:13px">No badges yet! Keep working!</div>
   </div>
@@ -598,6 +598,25 @@ setInterval(function(){
       <button class="add-btn" onclick="addWorkshopItem()">+ Add</button>
       <button class="clear-week-btn" onclick="clearCurrentWeek()">Clear Week</button>
     </div>
+  </div>
+
+  <div class="panel" id="panel-schedule">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:1px;margin-bottom:4px">🗓 CLASS SCHEDULE</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:16px">Enter your daily class periods. The AI will use this to give smarter homework advice.</div>
+    <div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="filter-btn active" onclick="showSchedDay('Monday',this)">Mon</button>
+      <button class="filter-btn" onclick="showSchedDay('Tuesday',this)">Tue</button>
+      <button class="filter-btn" onclick="showSchedDay('Wednesday',this)">Wed</button>
+      <button class="filter-btn" onclick="showSchedDay('Thursday',this)">Thu</button>
+      <button class="filter-btn" onclick="showSchedDay('Friday',this)">Fri</button>
+    </div>
+    <div id="schedDayLabel" style="font-family:'Orbitron',monospace;font-size:11px;color:var(--accent2);letter-spacing:1px;margin-bottom:12px">MONDAY</div>
+    <div id="schedPeriods"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="addSchedPeriod()" style="padding:10px 16px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:.5px">+ ADD PERIOD</button>
+      <button onclick="saveSchedule()" style="padding:10px 16px;background:var(--accent2);border:none;color:#fff;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;cursor:pointer;letter-spacing:.5px">SAVE ✓</button>
+    </div>
+    <div id="schedSaveMsg" style="font-size:11px;color:var(--green);margin-top:8px;min-height:16px"></div>
   </div>
 </div>
 
@@ -628,11 +647,12 @@ async function sb(table, method, body, query){
 }
 
 var NOTIF_TIMES = [{h:7,m:0},{h:14,m:40}];
-var APP_VERSION = '35';
+var APP_VERSION = '36';
 var APP_UPDATE_NOTES = {
   '33': 'Username login is here!',
   '34': 'Feedback inbox added and notifications improved.',
-  '35': '🔄 Cross-device sync is live! Your assignments now follow you to any computer. Log in anywhere and your data is there.'
+  '35': '🔄 Cross-device sync is live!',
+  '36': '🗓 Class Schedule tab added! Enter your periods and the AI will use your schedule to give smarter homework advice.'
 };
 var filter = 'all';
 var today, friday, monday, tuesday;
@@ -790,6 +810,88 @@ function showTab(name,btn){
 // ── TABS ──
 var aiExpanded = false;
 
+
+// ── CLASS SCHEDULE ──
+var scheduleData = {}; // {Monday:[{period:'1',subject:'Math',time:'8:00 AM'},...], ...}
+var schedCurrentDay = 'Monday';
+var SCHED_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+function initSchedule(){
+  var saved = localStorage.getItem('sp_schedule_'+currentStudentPin);
+  if(saved){ try{ scheduleData = JSON.parse(saved); }catch(e){ scheduleData = {}; } }
+  SCHED_DAYS.forEach(function(d){ if(!scheduleData[d]) scheduleData[d]=[]; });
+  renderSchedPeriods();
+}
+
+function showSchedDay(day, btn){
+  schedCurrentDay = day;
+  document.querySelectorAll('#panel-schedule .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  document.getElementById('schedDayLabel').textContent = day.toUpperCase();
+  renderSchedPeriods();
+}
+
+function renderSchedPeriods(){
+  var periods = scheduleData[schedCurrentDay]||[];
+  var el = document.getElementById('schedPeriods');
+  if(!periods.length){
+    el.innerHTML = '<div style="font-size:11px;color:var(--text2);padding:12px 0">No periods added yet. Click + ADD PERIOD to start.</div>';
+    return;
+  }
+  el.innerHTML = periods.map(function(p, i){
+    return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">'
+      + '<input value="'+p.period+'" placeholder="Period #" style="width:70px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:\'Share Tech Mono\',monospace;font-size:12px;outline:none" oninput="updateSchedPeriod('+i+',\'period\',this.value)"/>'
+      + '<input value="'+p.subject+'" placeholder="Subject..." style="flex:1;min-width:100px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:\'Share Tech Mono\',monospace;font-size:12px;outline:none" oninput="updateSchedPeriod('+i+',\'subject\',this.value)"/>'
+      + '<input value="'+p.time+'" placeholder="Time (e.g. 9:00 AM)" style="width:130px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:\'Share Tech Mono\',monospace;font-size:12px;outline:none" oninput="updateSchedPeriod('+i+',\'time\',this.value)"/>'
+      + '<button onclick="removeSchedPeriod('+i+')" style="background:none;border:1px solid var(--border);color:var(--red);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:11px">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+function addSchedPeriod(){
+  var periods = scheduleData[schedCurrentDay]||[];
+  periods.push({period:String(periods.length+1), subject:'', time:''});
+  scheduleData[schedCurrentDay] = periods;
+  renderSchedPeriods();
+}
+
+function removeSchedPeriod(i){
+  scheduleData[schedCurrentDay].splice(i,1);
+  renderSchedPeriods();
+}
+
+function updateSchedPeriod(i, field, val){
+  if(scheduleData[schedCurrentDay][i]) scheduleData[schedCurrentDay][i][field] = val;
+}
+
+function saveSchedule(){
+  localStorage.setItem('sp_schedule_'+currentStudentPin, JSON.stringify(scheduleData));
+  document.getElementById('schedSaveMsg').textContent = '✓ Schedule saved!';
+  setTimeout(function(){ document.getElementById('schedSaveMsg').textContent=''; }, 2000);
+}
+
+function getScheduleContext(){
+  var todayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+  var todayPeriods = scheduleData[todayName]||[];
+  if(!todayPeriods.length) return '';
+  var now = new Date();
+  var currentHour = now.getHours();
+  var nextClass = null;
+  todayPeriods.forEach(function(p){
+    if(!p.time||!p.subject) return;
+    var match = p.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if(match){
+      var h = parseInt(match[1]) + (match[3].toUpperCase()==='PM' && match[1]!=='12' ? 12 : 0);
+      if(h > currentHour && !nextClass) nextClass = p;
+    }
+  });
+  var schedStr = '\n\nTODAY\'S SCHEDULE ('+todayName+'):\n';
+  todayPeriods.forEach(function(p){
+    if(p.subject) schedStr += 'Period '+p.period+': '+p.subject+(p.time?' at '+p.time:'')+'\n';
+  });
+  if(nextClass) schedStr += 'NEXT CLASS: '+nextClass.subject+' at '+nextClass.time+' — prioritize that homework!\n';
+  return schedStr;
+}
 
 var BADGE_DEFS = [
   {id:'read7',icon:'🔥',name:'On Fire!',desc:'7-day READ streak'},
@@ -1131,6 +1233,7 @@ function loadStudentData(saved){
   setTimeout(function(){ updateSummary(); render(); }, 0);
   initWorkshop();
   initGoals();
+  initSchedule();
   setTimeout(function(){ showNotifications(); updateBell(); },800);
   scheduleNotifications();
   if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
@@ -2250,7 +2353,8 @@ function aiGetContext(){
             var when = diff < 0 ? 'OVERDUE by '+Math.abs(diff)+' day(s)' : diff===0 ? 'due TODAY' : 'due in '+diff+' day(s)';
             return '- '+a.title+' ['+a.subject+'] — '+when;
           }).join('\n')
-        : 'none');
+        : 'none')
+    + (typeof getScheduleContext === 'function' ? getScheduleContext() : '');
 }
 
 function aiAddMsg(text, role){
