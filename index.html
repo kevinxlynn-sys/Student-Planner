@@ -871,25 +871,42 @@ function saveSchedule(){
 }
 
 function getScheduleContext(){
-  var todayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
-  var todayPeriods = scheduleData[todayName]||[];
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var todayName = dayNames[new Date().getDay()];
+  var todayPeriods = (scheduleData[todayName]||[]).filter(function(p){ return p.subject; });
   if(!todayPeriods.length) return '';
+
+  var schedStr = '\n\nTODAY\'S CLASS SCHEDULE ('+todayName+'):\n';
+  todayPeriods.forEach(function(p){
+    schedStr += 'Period '+p.period+': '+p.subject+(p.time?' at '+p.time:'')+'\n';
+  });
+
+  // Find next class based on current time
   var now = new Date();
-  var currentHour = now.getHours();
+  var currentMins = now.getHours()*60 + now.getMinutes();
   var nextClass = null;
   todayPeriods.forEach(function(p){
-    if(!p.time||!p.subject) return;
-    var match = p.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if(match){
-      var h = parseInt(match[1]) + (match[3].toUpperCase()==='PM' && match[1]!=='12' ? 12 : 0);
-      if(h > currentHour && !nextClass) nextClass = p;
+    if(!p.time) return;
+    // Flexible time parsing: "9:00 AM", "9am", "9:30am", "14:00"
+    var t = p.time.trim().toUpperCase();
+    var h, m=0;
+    var match12 = t.match(/^(\d+)(?::(\d+))?\s*(AM|PM)/);
+    var match24 = t.match(/^(\d+):(\d+)$/);
+    if(match12){
+      h = parseInt(match12[1]);
+      m = match12[2] ? parseInt(match12[2]) : 0;
+      if(match12[3]==='PM' && h!==12) h+=12;
+      if(match12[3]==='AM' && h===12) h=0;
+    } else if(match24){
+      h = parseInt(match24[1]);
+      m = parseInt(match24[2]);
+    }
+    if(h!==undefined){
+      var classMins = h*60+m;
+      if(classMins > currentMins && !nextClass) nextClass = p;
     }
   });
-  var schedStr = '\n\nTODAY\'S SCHEDULE ('+todayName+'):\n';
-  todayPeriods.forEach(function(p){
-    if(p.subject) schedStr += 'Period '+p.period+': '+p.subject+(p.time?' at '+p.time:'')+'\n';
-  });
-  if(nextClass) schedStr += 'NEXT CLASS: '+nextClass.subject+' at '+nextClass.time+' — prioritize that homework!\n';
+  if(nextClass) schedStr += 'NEXT CLASS UP: '+nextClass.subject+(nextClass.time?' at '+nextClass.time:'')+' — consider finishing that homework first!\n';
   return schedStr;
 }
 
