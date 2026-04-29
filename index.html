@@ -751,10 +751,24 @@ async function createAccount(){
   setTimeout(function(){ showTutorial(); }, 500);
 }
 
-function checkUsername(){
+async function checkUsername(){
   var username = document.getElementById('loginUsername').value.trim();
   var students = getStudents();
   var student = students.find(function(s){ return s.username && s.username.toLowerCase()===username.toLowerCase(); });
+
+  if(!student){
+    // Try Supabase for cross-device login
+    try {
+      var rows = await sb('student_data','GET',null,'?username=eq.'+encodeURIComponent(username)+'&limit=1');
+      if(rows && rows[0]){
+        var cloudStudent = {name: rows[0].name, username: username, grade: rows[0].grade||'6'};
+        students.push(cloudStudent);
+        saveStudents(students);
+        student = cloudStudent;
+      }
+    } catch(e){ /* network error — fall through to error message */ }
+  }
+
   if(!student){
     document.getElementById('errorMsg').textContent='Username not found. Try again or sign up.';
     document.getElementById('errorMsg').style.color='var(--red)';
