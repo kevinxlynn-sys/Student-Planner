@@ -364,8 +364,11 @@ setInterval(function(){
       <option value="Other">Other</option>
     </select>
     <input type="date" id="editDue" style="width:100%;margin-bottom:6px;display:block;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none"/>
-    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);margin-bottom:18px;cursor:pointer">
+    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);margin-bottom:10px;cursor:pointer">
       <input type="checkbox" id="editNoDue" onchange="document.getElementById('editDue').disabled=this.checked;document.getElementById('editDue').style.opacity=this.checked?'.3':'1'"/> No due date
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);margin-bottom:18px;cursor:pointer">
+      <input type="checkbox" id="editDaily"/> Repeats daily (shows every day)
     </label>
     <div style="display:flex;gap:8px">
       <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--accent2);border:none;color:#fff;border-radius:10px;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer">SAVE</button>
@@ -459,28 +462,46 @@ setInterval(function(){
     </div>
     <div id="tut0" class="tut-panel">
       <div style="text-align:center;font-size:48px;margin-bottom:16px">👋</div>
-      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">HEY THERE!</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.7;text-align:center">Welcome to Student Planner! This quick tour shows you how everything works. Takes about a minute!</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">WELCOME TO MACH 1!</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8;text-align:center">Your AI-powered homework planner. This tour takes 1 minute — let's go!<br><br>
+      <span style="color:var(--accent2)">Username login</span> means your account is yours — no PIN, no problem. Sign in from any computer and your data follows you.</div>
     </div>
     <div id="tut1" class="tut-panel" style="display:none">
       <div style="text-align:center;font-size:48px;margin-bottom:16px">📋</div>
-      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">ASSIGNMENTS TAB</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.7">Track all your homework here.<br><br>🚨 <b>Red siren</b> = Overdue<br>🔔 <b>Bell</b> = Coming up soon<br>✅ <b>Green</b> = Plenty of time<br><br>Check things off to earn <b>+25 XP!</b></div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">ASSIGNMENTS</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8">Track all your homework here.<br><br>
+      ✏️ <b>Edit</b> any assignment — title, subject, due date<br>
+      ✅ <b>Check off</b> to earn <b>+25 XP</b><br>
+      🚨 <b>Red siren</b> = overdue<br>
+      🔔 <b>Chip colors</b> show how close the deadline is<br><br>
+      The AI can <b>add or remove assignments</b> for you — just ask it!</div>
     </div>
     <div id="tut2" class="tut-panel" style="display:none">
-      <div style="text-align:center;font-size:48px;margin-bottom:16px">🛠</div>
-      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">WORKSHOP TAB</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.7">Your weekly workshop list lives here.<br><br>Copy your list, paste it in the box, and click <b>Load List</b>.<br><br>Check off items to earn <b>+15 XP!</b></div>
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🤖</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">AI HELPER</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8">Your personal AI tutor — bottom left corner.<br><br>
+      🎯 <b>"What should I work on first?"</b><br>
+      📚 <b>"Explain photosynthesis"</b><br>
+      ➕ <b>"Add math homework due Friday"</b><br>
+      🗑️ <b>"Remove the science project"</b><br><br>
+      It knows your assignments, goals, and <b>class schedule</b> — the more you set up, the smarter it gets!</div>
     </div>
     <div id="tut3" class="tut-panel" style="display:none">
-      <div style="text-align:center;font-size:48px;margin-bottom:16px">🎯</div>
-      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">GOALS TAB</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.7">The most powerful part!<br><br>Set a big goal — college, sports, career. The app sends <b>personalized notifications</b> every day built around YOUR goal.</div>
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🛠</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">WORKSHOP + SCHEDULE</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8">
+      <b>Workshop tab</b> — paste your Google Doc homework list and it auto-loads everything into Assignments.<br><br>
+      <b>Schedule tab</b> — enter your class periods with times. The AI will see your schedule and tell you which homework to do before your next class!</div>
     </div>
     <div id="tut4" class="tut-panel" style="display:none">
-      <div style="text-align:center;font-size:48px;margin-bottom:16px">🔔</div>
-      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">NOTIFICATIONS</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.7">Real reminders at:<br><br>☀️ <b>7:00 AM</b> every morning<br>🏫 <b>2:40 PM</b> after school<br><br>Allow notifications when asked!<br><br><div style="text-align:center;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent3);margin-top:12px">You're all set! Let's go! 🚀</div></div>
+      <div style="text-align:center;font-size:48px;margin-bottom:16px">🎯</div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);text-align:center;margin-bottom:12px">GOALS + BADGES</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8">
+      Set a big goal — college, sports, career — and the app sends <b>personalized motivation</b> tied to it.<br><br>
+      Earn <b>badges</b> for streaks, XP milestones, and finishing homework on time.<br><br>
+      💬 Use the <b>feedback button</b> in the header to send suggestions.<br>
+      🔄 Hit <b>reload</b> to get the latest version of the app.<br><br>
+      <div style="text-align:center;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent3);margin-top:8px">You're all set! Let's go! 🚀</div></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:28px">
       <button id="tutBack" onclick="tutNav(-1)" style="display:none;flex:1;padding:12px;background:none;border:1px solid var(--border);color:var(--text2);font-family:'Orbitron',monospace;font-size:11px;border-radius:10px;cursor:pointer">BACK</button>
@@ -1387,6 +1408,7 @@ function openEdit(id){
   document.getElementById('editSubject').value = a.subject || 'Other';
   var noDue = a.noDue || false;
   document.getElementById('editNoDue').checked = noDue;
+  document.getElementById('editDaily').checked = a.daily || false;
   document.getElementById('editDue').value = a.due ? a.due.toISOString().slice(0,10) : '';
   document.getElementById('editDue').disabled = noDue;
   document.getElementById('editDue').style.opacity = noDue ? '.3' : '1';
@@ -1403,11 +1425,10 @@ function saveEdit(){
   a.title = title;
   a.subject = document.getElementById('editSubject').value;
   a.noDue = noDue;
-  if(noDue){
-    a.due = new Date(today); // stored as today but flagged noDue — won't show as overdue
-  } else {
-    a.due = dueVal ? new Date(dueVal + 'T00:00:00') : new Date(friday); // default to next Friday if no date picked
-  }
+  a.daily = document.getElementById('editDaily').checked;
+  if(a.daily){ a.due = new Date(today); a.noDue = false; }
+  else if(noDue){ a.due = new Date(today); }
+  else { a.due = dueVal ? new Date(dueVal + 'T00:00:00') : new Date(today); }
   document.getElementById('editModal').style.display = 'none';
   updateSummary(); render(); saveCurrentData();
 }
@@ -1455,7 +1476,7 @@ function makeCard(a){
     '<div class="check'+(isDone?' on':'')+'" onclick="toggle('+a.id+')">'+(isDone?'&#10003;':'')+' </div>'+
     '<div class="hw-body"><div class="hw-title">'+a.title+'</div><div class="hw-cat" style="color:'+color+'">'+a.subject+'</div></div>'+
     '<div class="hw-right">'+chipHtml+sirenHtml+'</div>'+
-    (a.daily?'':'<button class="del-btn" style="margin-right:2px" onclick="openEdit('+a.id+')" title="Edit">✏️</button><button class="del-btn" onclick="delAssignment('+a.id+')">&#10005;</button>')+
+    '<button class="del-btn" style="margin-right:2px" onclick="openEdit('+a.id+')" title="Edit">✏️</button><button class="del-btn" onclick="delAssignment('+a.id+')">&#10005;</button>')+
   '</div>';
 }
 
