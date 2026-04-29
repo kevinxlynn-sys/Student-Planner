@@ -1580,6 +1580,34 @@ function sendBrowserNotifications(){
   var readItem = assignments.find(function(a){ return a.daily; });
   var goalName = activeGoals.length ? activeGoals[0].name : null;
 
+  // Schedule — class coming up in next 30 minutes with homework
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var todayName = dayNames[new Date().getDay()];
+  var todayPeriods = (scheduleData && scheduleData[todayName])||[];
+  var now = new Date();
+  var nowMins = now.getHours()*60 + now.getMinutes();
+  todayPeriods.forEach(function(p){
+    if(!p.subject || !p.time) return;
+    var t = p.time.trim().toUpperCase();
+    var h, m=0;
+    var match12 = t.match(/^(\d+)(?::(\d+))?\s*(AM|PM)/);
+    var match24 = t.match(/^(\d+):(\d+)$/);
+    if(match12){ h=parseInt(match12[1]); m=match12[2]?parseInt(match12[2]):0; if(match12[3]==='PM'&&h!==12)h+=12; if(match12[3]==='AM'&&h===12)h=0; }
+    else if(match24){ h=parseInt(match24[1]); m=parseInt(match24[2]); }
+    if(h===undefined) return;
+    var classMins = h*60+m;
+    var minsUntil = classMins - nowMins;
+    if(minsUntil>0 && minsUntil<=30){
+      // Find homework for this subject
+      var subjectHw = pending.filter(function(a){ return a.subject.toLowerCase()===p.subject.toLowerCase(); });
+      if(subjectHw.length){
+        msgs.unshift({title:'🏫 '+p.subject+' in '+minsUntil+' min!', body:'Finish "'+subjectHw[0].title+'" before class! You got this 💪', tag:'class-'+p.subject});
+      } else {
+        msgs.unshift({title:'🏫 '+p.subject+' in '+minsUntil+' min!', body:'Get ready for '+p.subject+' — you\'re all caught up on that homework! ✅', tag:'class-'+p.subject});
+      }
+    }
+  });
+
   // Overdue
   if(overdue.length){
     msgs.push({title:'⚠️ Heads up, '+currentStudentName.split(' ')[0]+'!', body:overdue.length+' assignment'+(overdue.length>1?'s are':' is')+' overdue. Let\'s knock '+(overdue.length>1?'them':'it')+' out!'});
