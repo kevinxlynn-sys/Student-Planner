@@ -1360,11 +1360,6 @@ function buildNotifications(){
   });
   var readDone=assignments.find(function(a){ return a.daily&&a.done; });
   if(!readDone) items.push({type:'read',text:'Don\'t forget to READ today! It\'s a daily habit.',sub:'ELA — Daily',cls:'read',badge:'DAILY READ',badgeCls:'badge-blue'});
-  // Show feedback for G Lynn
-  var feedback = getFeedbackForCurrentUser();
-  feedback.forEach(function(f){
-    items.push({type:'feedback',text:'"'+f.text+'"',sub:'From '+f.from+' — '+f.date,cls:'notif-smart',badge:'FEEDBACK',badgeCls:'badge-cyan'});
-  });
   return items;
 }
 function updateBell(){ var items=buildNotifications(); var badge=document.getElementById('bellBadge'); if(items.length>0){badge.textContent=items.length;badge.classList.add('show');}else{badge.classList.remove('show');} }
