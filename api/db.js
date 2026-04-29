@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'https://jyuofmbbitaswgxtnsgnp.supabase.co';
+const SUPABASE_URL = 'https://jyuofmbbitaswgxtnsgp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dW9mbWJiaXRhc3dneHRuc2dwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDY0NjUwMywiZXhwIjoyMDkwMjIyNTAzfQ.M0hQ4btCLUbhUkhSEqBa2UtpifFgK8gtNTmxPvTAFBw';
 
 export default async function handler(req, res) {
@@ -12,4 +12,25 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(url, {
-      method: method
+      method: method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': method === 'POST' ? 'return=representation' : 'return=representation'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : [];
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data });
+    }
+
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+}
