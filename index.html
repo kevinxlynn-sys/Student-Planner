@@ -362,6 +362,16 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
   </div>
 </div>
 
+<div id="feedbackInboxModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:1px;flex:1">📬 FEEDBACK INBOX</div>
+      <button onclick="document.getElementById('feedbackInboxModal').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;cursor:pointer">CLOSE</button>
+    </div>
+    <div id="feedbackInboxContent" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
 <div id="feedbackModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:380px;width:100%">
     <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">💬 SEND FEEDBACK</div>
@@ -487,7 +497,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
         <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
       </div>
       <button class="header-btn" onclick="showTutorial()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px" title="How to use this app">❓</button>
-      <button class="header-btn" onclick="openFeedback()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px" title="Send feedback">💬</button>
+      <button class="header-btn" onclick="currentStudentPin.toLowerCase()===FEEDBACK_RECIPIENT_USERNAME.toLowerCase()?openFeedbackInbox():openFeedback()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px" title="Feedback">💬</button>
       <button class="signout-btn" onclick="signOut()">EXIT</button>
     </div>
   </div>
@@ -1119,7 +1129,7 @@ function toggle(id){
   if(document.getElementById('panel-goals').classList.contains('active')) renderGoals();
 }
 
-var FEEDBACK_RECIPIENT = 'G Lynn'; // Stored under this name's account
+var FEEDBACK_RECIPIENT_USERNAME = 'innsunny53';
 
 function openFeedback(){
   document.getElementById('feedbackText').value='';
@@ -1131,33 +1141,78 @@ function submitFeedback(){
   var text = document.getElementById('feedbackText').value.trim();
   if(!text){ document.getElementById('feedbackMsg').style.color='var(--red)'; document.getElementById('feedbackMsg').textContent='Please write something first!'; return; }
 
-  // Find G Lynn's account key
-  var students = getStudents();
-  var glynn = students.find(function(s){ return s.name && s.name.toLowerCase().includes('g lynn') || (s.name && s.name.toLowerCase().split(' ')[0]==='g' && s.name.toLowerCase().split(' ')[1]==='lynn'); });
-  var storageKey = glynn ? 'sp_feedback_'+glynn.username : 'sp_feedback_glynn';
+  document.getElementById('feedbackMsg').style.color='var(--accent3)';
+  document.getElementById('feedbackMsg').textContent='Sending...';
 
-  // Save feedback
-  var existing = [];
-  try{ existing = JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch(e){}
-  existing.push({
-    from: currentStudentName,
-    text: text,
-    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  // Save to Supabase
+  sb('feedback','POST',{
+    from_name: currentStudentName,
+    from_username: currentStudentPin,
+    message: text,
+    checked: false,
+    response: null
+  }, null).then(function(){
+    document.getElementById('feedbackMsg').style.color='var(--green)';
+    document.getElementById('feedbackMsg').textContent='Sent! Thanks for your feedback 🙏';
+    document.getElementById('feedbackText').value='';
+    setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; }, 1500);
+  }).catch(function(){
+    // Fallback to localStorage if Supabase fails
+    var storageKey = 'sp_feedback_' + FEEDBACK_RECIPIENT_USERNAME;
+    var existing = [];
+    try{ existing = JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch(e){}
+    existing.push({ from: currentStudentName, text: text, date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) });
+    localStorage.setItem(storageKey, JSON.stringify(existing));
+    document.getElementById('feedbackMsg').style.color='var(--green)';
+    document.getElementById('feedbackMsg').textContent='Sent! 🙏';
+    document.getElementById('feedbackText').value='';
+    setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; }, 1500);
   });
-  localStorage.setItem(storageKey, JSON.stringify(existing));
-
-  document.getElementById('feedbackMsg').style.color='var(--green)';
-  document.getElementById('feedbackMsg').textContent='Sent! Thanks for your feedback 🙏';
-  document.getElementById('feedbackText').value='';
-  setTimeout(function(){ document.getElementById('feedbackModal').style.display='none'; }, 1500);
 }
 
 function getFeedbackForCurrentUser(){
-  var students = getStudents();
-  var me = students.find(function(s){ return s.username === currentStudentPin; });
-  if(!me) return [];
-  var storageKey = 'sp_feedback_'+me.username;
-  try{ return JSON.parse(localStorage.getItem(storageKey)||'[]'); }catch(e){ return []; }
+  if(currentStudentPin.toLowerCase() !== FEEDBACK_RECIPIENT_USERNAME.toLowerCase()) return Promise.resolve([]);
+  return sb('feedback','GET',null,'?order=created_at.desc').catch(function(){ return []; });
+}
+
+function openFeedbackInbox(){
+  var modal = document.getElementById('feedbackInboxModal');
+  var content = document.getElementById('feedbackInboxContent');
+  content.innerHTML = '<div style="color:var(--text2);font-size:12px">Loading...</div>';
+  modal.style.display = 'flex';
+
+  sb('feedback','GET',null,'?order=created_at.desc').then(function(items){
+    if(!items.length){ content.innerHTML='<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px">No feedback yet!</div>'; return; }
+    content.innerHTML = items.map(function(item){
+      return '<div id="fb-'+item.id+'" style="background:var(--surface2);border:1px solid '+(item.checked?'var(--green)':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+        + '<span style="font-size:11px;color:var(--accent);font-family:\'Orbitron\',monospace">'+item.from_name+'</span>'
+        + '<span style="font-size:10px;color:var(--text2);flex:1">'+new Date(item.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>'
+        + (item.checked?'<span style="font-size:10px;color:var(--green)">✓ DONE</span>':'')
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--text);margin-bottom:10px">"'+item.message+'"</div>'
+        + (item.response?'<div style="font-size:11px;color:var(--accent3);border-top:1px solid var(--border);padding-top:8px;margin-top:4px">Your reply: '+item.response+'</div>':'')
+        + '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'
+        + '<input id="reply-'+item.id+'" placeholder="Write a response..." style="flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-family:\'Share Tech Mono\',monospace;font-size:11px;outline:none" value="'+(item.response||'')+'"/>'
+        + '<button onclick="respondFeedback(\''+item.id+'\')" style="background:var(--accent2);border:none;color:#fff;border-radius:6px;padding:6px 10px;font-family:\'Orbitron\',monospace;font-size:9px;cursor:pointer">REPLY</button>'
+        + '<button onclick="checkFeedback(\''+item.id+'\','+item.checked+')" style="background:'+(item.checked?'var(--surface3)':'var(--green)')+';border:none;color:#fff;border-radius:6px;padding:6px 10px;font-family:\'Orbitron\',monospace;font-size:9px;cursor:pointer">'+(item.checked?'UNCHECK':'✓ DONE')+'</button>'
+        + '</div></div>';
+    }).join('');
+  }).catch(function(){
+    content.innerHTML='<div style="color:var(--red);font-size:12px">Could not load feedback.</div>';
+  });
+}
+
+async function respondFeedback(id){
+  var reply = document.getElementById('reply-'+id).value.trim();
+  if(!reply) return;
+  await sb('feedback','PATCH',{response:reply},'?id=eq.'+id);
+  openFeedbackInbox();
+}
+
+async function checkFeedback(id, currentlyChecked){
+  await sb('feedback','PATCH',{checked:!currentlyChecked},'?id=eq.'+id);
+  openFeedbackInbox();
 }
 
 function delAssignment(id){
