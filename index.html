@@ -281,26 +281,17 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <script>
-// Check for new version every 2 minutes and auto-reload if found
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(function(){});
-}
-
 setInterval(function(){
-  fetch('/index.html?v=' + Date.now(), {cache: 'no-store'})
+  fetch('/version.txt?v=' + Date.now(), {cache: 'no-store'})
     .then(function(r){ return r.text(); })
-    .then(function(html){
-      var match = html.match(/APP_VERSION\s*=\s*'(\d+)'/);
-      if(match){
-        var latestVersion = match[1];
-        var currentVersion = typeof APP_VERSION !== 'undefined' ? APP_VERSION : null;
-        if(currentVersion && latestVersion !== currentVersion){
-          // New version found — reload the page
-          window.location.reload(true);
-        }
+    .then(function(latestVersion){
+      latestVersion = latestVersion.trim();
+      var currentVersion = typeof APP_VERSION !== 'undefined' ? APP_VERSION : null;
+      if(currentVersion && latestVersion !== currentVersion){
+        window.location.reload(true);
       }
     }).catch(function(){});
-}, 120000); // every 2 minutes
+}, 120000);
 </script>
 </head>
 
