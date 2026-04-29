@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': method === 'POST' ? 'return=representation' : 'return=representation'
+        'Prefer': (query && query.includes('on_conflict')) ? 'resolution=merge-duplicates,return=representation' : 'return=representation'
       },
       body: body ? JSON.stringify(body) : undefined
     });
